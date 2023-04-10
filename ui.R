@@ -1,6 +1,6 @@
 ui <- fluidPage(
   
-  titlePanel(paste0(Sys.getenv("ABCDE"))),
+  titlePanel(paste0(("Ignite Analyzer"))),
   
   sidebarLayout(
     sidebarPanel(

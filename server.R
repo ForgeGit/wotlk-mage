@@ -10,7 +10,13 @@ boss_list <- c(757, #Alga
 #########################################################################################
 
 
-
+token <- POST("https://www.warcraftlogs.com/oauth/token",
+              config = list(),
+              body = list(
+                grant_type="client_credentials",
+                client_id=Sys.getenv("warcralog_id_ignite"),
+                client_secret=Sys.getenv("warcralog_secret_ignite"))) %>% 
+  content("parsed")
 #########################################################################################
 url <- "https://classic.warcraftlogs.com/api/v2"
 
@@ -23,7 +29,7 @@ WCL_API2_request <- function(request) {
   response <- POST(url,
                    add_headers("Content-Type" = "application/json",
                                "Authorization"= paste0("Bearer ",
-                                                       token$access_token)),
+                                                       Sys.getenv("TOKEN"))),
                    body = request,
                    content_type_json(),
                    encode = "json")
@@ -318,20 +324,12 @@ server <- function(input, output,session) {
   actors <- NULL
   fights <- NULL
   
-  token <- POST("https://www.warcraftlogs.com/oauth/token",
-                config = list(),
-                body = list(
-                  grant_type="client_credentials",
-                  client_id=Sys.getenv("warcralog_id_ignite"),
-                  client_secret=Sys.getenv("warcralog_secret_ignite"))) %>% 
-    content("parsed")
-  
   # retrieve list of mages
   observeEvent(input$submit_log_id, {
     
-    request1 <- sprintf(request_mage, as.character(input$log_id))
-    request2 <- WCL_API2_request(request1)
-    actors <- request2$data$reportData$report$masterData$actors 
+    request <- sprintf(request_mage, as.character(input$log_id))
+    request <- WCL_API2_request(request)
+    actors <- request$data$reportData$report$masterData$actors 
     
     if(length(actors)!=0){
       
@@ -383,8 +381,8 @@ server <- function(input, output,session) {
       }) 
       
       showModal(modalDialog(
-        title = "AAAAAAAAAAAAAAA",paste0(
-        "Hi! Yes, This is incomplete and the user experience is missing, for now.",token$access_token),
+        title = "AAAAAAAAAAAAAAA",
+        "Hi! Yes, This is incomplete and the user experience is missing, for now.",
         easyClose = TRUE,
         footer = tagList(
           modalButton("OK")

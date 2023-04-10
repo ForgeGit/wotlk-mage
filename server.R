@@ -10,13 +10,7 @@ boss_list <- c(757, #Alga
 #########################################################################################
 
 
-token <- POST("https://www.warcraftlogs.com/oauth/token",
-              config = list(),
-              body = list(
-                grant_type="client_credentials",
-                client_id=Sys.getenv("warcralog_id_ignite"),
-                client_secret=Sys.getenv("warcralog_secret_ignite"))) %>% 
-  content("parsed")
+
 #########################################################################################
 url <- "https://classic.warcraftlogs.com/api/v2"
 
@@ -323,6 +317,14 @@ ignite_summary <- function(x) {
 server <- function(input, output,session) {
   actors <- NULL
   fights <- NULL
+  
+  token <- POST("https://www.warcraftlogs.com/oauth/token",
+                config = list(),
+                body = list(
+                  grant_type="client_credentials",
+                  client_id=Sys.getenv("warcralog_id_ignite"),
+                  client_secret=Sys.getenv("warcralog_secret_ignite"))) %>% 
+    content("parsed")
   
   # retrieve list of mages
   observeEvent(input$submit_log_id, {

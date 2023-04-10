@@ -1,4 +1,7 @@
 ui <- fluidPage(
+  
+  titlePanel(paste0(Sys.getenv("ABCDE"))),
+  
   sidebarLayout(
     sidebarPanel(
       # input for log ID

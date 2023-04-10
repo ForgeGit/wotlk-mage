@@ -329,9 +329,9 @@ server <- function(input, output,session) {
   # retrieve list of mages
   observeEvent(input$submit_log_id, {
     
-    request <- sprintf(request_mage, as.character(input$log_id))
-    request <- WCL_API2_request(request)
-    actors <- request$data$reportData$report$masterData$actors 
+    request1 <- sprintf(request_mage, as.character(input$log_id))
+    request2 <- WCL_API2_request(request1)
+    actors <- request2$data$reportData$report$masterData$actors 
     
     if(length(actors)!=0){
       
@@ -383,8 +383,8 @@ server <- function(input, output,session) {
       }) 
       
       showModal(modalDialog(
-        title = "AAAAAAAAAAAAAAA",
-        "Hi! Yes, This is incomplete and the user experience is missing, for now.",
+        title = "AAAAAAAAAAAAAAA",paste0(
+        "Hi! Yes, This is incomplete and the user experience is missing, for now.",token$access_token),
         easyClose = TRUE,
         footer = tagList(
           modalButton("OK")

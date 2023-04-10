@@ -1,3 +1,23 @@
+
+#########################################################################################
+boss_list <- c(757, #Alga
+               752, #Thorim
+               755, #Vezax
+               746  #Razorscale
+) 
+
+
+#########################################################################################
+
+
+token <- POST("https://www.warcraftlogs.com/oauth/token",
+              config = list(),
+              body = list(
+                grant_type="client_credentials",
+                client_id=Sys.getenv("warcralog_id_ignite"),
+                client_secret=Sys.getenv("warcralog_secret_ignite"))) %>% 
+  content("parsed")
+#########################################################################################
 url <- "https://classic.warcraftlogs.com/api/v2"
 
 WCL_API2_request <- function(request) {
@@ -21,25 +41,6 @@ WCL_API2_request <- function(request) {
   
   return(response_formated)
 }
-
-#########################################################################################
-boss_list <- c(757, #Alga
-               752, #Thorim
-               755, #Vezax
-               746  #Razorscale
-) 
-
-
-#########################################################################################
-
-
-token <- POST("https://www.warcraftlogs.com/oauth/token",
-              config = list(),
-              body = list(
-                grant_type="client_credentials",
-                client_id=Sys.getenv("warcralog_id_ignite"),
-                client_secret=Sys.getenv("warcralog_secret_ignite"))) %>% 
-  content("parsed")
 #########################################################################################
 request_mage <-'{
     reportData {

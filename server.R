@@ -506,7 +506,7 @@ server <- function(input, output,session) {
                  str1, str2, 
                  "<br/>",
                  str3, 
-                 paste0("<h4>Result</h4>"),
+                 paste0("<b>Result</b>"),
                  str4,
                  str5,
                  "<br/",

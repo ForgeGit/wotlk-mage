@@ -475,7 +475,7 @@ server <- function(input, output,session) {
       str4 <- paste0( "- Estimated difference: ", Munch_NET_result)
       if(Munch_NET_result>0 & Munch_NET_result>10) { 
         str5 <- paste0("<font color=\"#0000FF\"><b>VOMIT DETECTED</b></font>")
-      } else if(Munch_NET_result<0 & Munch_NET_result<-10){ 
+      } else if(Munch_NET_result<0 & Munch_NET_result<10){ 
         str5 <- paste0("<font color=\"#FF0000\"><b>MUNCH DETECTED</b></font>")
         
       } else { 

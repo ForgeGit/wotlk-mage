@@ -374,7 +374,7 @@ server <- function(input, output,session) {
       
       
       # retrieve list of fights
-      request <- sprintf(request_fights, as.character(as.character(input$log_id)))
+      request <- sprintf(request_fights, as.character(extract_log_id(as.character(input$log_id))))
       request <- WCL_API2_request(request)
       fights <- request$data$reportData$report$fights 
       fights <- fights %>% 
@@ -430,7 +430,7 @@ server <- function(input, output,session) {
     ### Spec detection
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
-    request <- sprintf(request_spec, as.character(as.character(input$log_id)),as.numeric(fight_temp), as.numeric(actor_temp))
+    request <- sprintf(request_spec, as.character(extract_log_id(as.character(input$log_id))),as.numeric(fight_temp), as.numeric(actor_temp))
     request <- WCL_API2_request(request)
     request <- request$data$reportData$report$events$data
     
@@ -451,7 +451,7 @@ server <- function(input, output,session) {
     
     if(spec=="Fire"){
     ### Damage and casts extraction
-    request <- sprintf(request_damage, as.character(as.character(input$log_id)), as.numeric(actor_temp), as.numeric(fight_temp))
+    request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
     request <- WCL_API2_request(request)
     request <- request$data$reportData$report$events$data
     

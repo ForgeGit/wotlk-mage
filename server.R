@@ -429,7 +429,7 @@ server <- function(input, output,session) {
     
     output$summary <- renderUI({
       str1 <- paste0("Ignite lost to (target) death: ", max(ignite_table$Ignite_tick_lost_dead2))
-      str2 <- paste0( "Estimated Ignite Damage difference: ", round(ignite_table$Munch_NET_2))
+      str2 <- paste0( "Estimated Ignite Damage difference: ", (round(ignite_table$Munch_NET_2)*-1))
       HTML(paste(str1, str2, sep = '<br/>'))
       
     })

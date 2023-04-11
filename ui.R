@@ -18,7 +18,7 @@ ui <- fluidPage(
       br(),
       "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale)",
       br(),
-      
+      br(),
       # input for log ID
       textInput("log_id", "Enter Log ID:"),
       

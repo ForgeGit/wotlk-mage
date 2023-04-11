@@ -485,22 +485,40 @@ server <- function(input, output,session) {
 
       Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
         
-      str1 <- paste0( "- Expected ignite damage: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
-      str2 <- paste0( "- Ignite damage dealt (before resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
+      str1 <- paste0( "- Expected ignite damage (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
+      str2 <- paste0( "- Ignite damage dealt (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
       str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
       str3 <- paste0("- Ignite lost to (target) death: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
       str4 <- paste0( "- Estimated difference: ",  prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
       if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
-        str5 <- paste0("<font color=\"#0000FF\"><b>VOMIT DETECTED</b></font>")
+        str5 <- paste0("<font color=\"#0000FF\"><b>You dealt more ignite damage than expected. This means VOMIT was present in your casts.</b></font>")
       } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
-        str5 <- paste0("<font color=\"#FF0000\"><b>MUNCH DETECTED</b></font>")
+        str5 <- paste0("<font color=\"#FF0000\"><b>You dealt less ignite damage than expected. This means MUNCH was present in your casts.</b></font>")
         
       } else { 
-        str5 <- paste0("<font color=\"#5A5A5A\"><b>EXPECTED IGNITE</b></font>")  
+        str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
       }
+      str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+      str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
       
       
-      HTML(paste(str1, str2,str2_res, str3, str4,str5, sep = '<br/>'))
+      HTML(paste(paste0("<h3> Ignite Metrics for ",fight_temp," and ",actor_temp,"</h3>"),
+                 "<br/>",
+                 str1, str2, 
+                 "<br/>",
+                 str3, 
+                 "<br/>",
+                 str4,
+                 str5,
+                 "<br/",
+                 "<br/",
+                 
+                 paste0("<h4> Other Ignite metrics </h4>"),
+                 str2_res,
+                 str_max,
+                 str_min,
+                 
+                 sep = '<br/>'))
       
     })
     

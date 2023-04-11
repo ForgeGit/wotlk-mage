@@ -503,16 +503,15 @@ server <- function(input, output,session) {
       
       
       HTML(paste(paste0("<h3> Ignite Metrics for ",input$fight," and ",input$character,"</h3>"),
-                 "<br/>",
                  str1, str2, 
                  "<br/>",
                  str3, 
                  "<br/>",
+                 paste0("<h4>Result</h4>"),
                  str4,
                  str5,
                  "<br/",
                  "<br/",
-                 
                  paste0("<h4> Other Ignite metrics </h4>"),
                  str2_res,
                  str_max,

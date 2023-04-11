@@ -7,7 +7,7 @@ ui <- fluidPage(
       # input for log ID
       textInput("log_id", "Enter Log ID:"),
       
-      actionButton("submit_log_id",icon("refresh")),
+      actionButton("submit_log_id","Enter log and load data",icon("refresh")),
       # input for character selection
       selectInput("character", "Select Character:", choices = NULL),
       # input for fight selection

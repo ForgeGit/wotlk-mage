@@ -14,8 +14,12 @@ ui <- fluidPage(
       selectInput("fight", "Select Fight:", choices = NULL),
       
       actionButton("submit_char_id","Estimate Ignite Metrics"),
-      actionButton("debug_id","DEBUG TABLE")
-      
+      actionButton("debug_id","DEBUG TABLE"),
+      br(),
+      br(),
+      "_- Forge#0001 [Vivax-Pagle(US)]_",
+  #    "Consider a donation to upkeep this service:"
+      "See my other work: https://github.com/ForgeGit?tab=repositories"
     ),
     mainPanel(
       # output for data table

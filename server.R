@@ -471,10 +471,10 @@ server <- function(input, output,session) {
 
       Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
         
-      str1 <- paste0( "- Expected ignite damage: ", (round(ignite_table$Total_Ignite_Dmg_Potential)))
-      str2 <- paste0( "- Ignite damage dealt: ", (round(ignite_table$Total_Ignite_Dmg_Dealt)))
-      str3 <- paste0("- Ignite lost to (target) death: ", round(ignite_table$Ignite_tick_lost_dead2))
-      str4 <- paste0( "- Estimated difference: ", Munch_NET_result)
+      str1 <- paste0( "- Expected ignite damage: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))),big.mark=",",scientific=FALSE)
+      str2 <- paste0( "- Ignite damage dealt: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt))),big.mark=",",scientific=FALSE)
+      str3 <- paste0("- Ignite lost to (target) death: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE)
+      str4 <- paste0( "- Estimated difference: ",  prettyNum(Munch_NET_result),big.mark=",",scientific=FALSE)
       if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
         str5 <- paste0("<font color=\"#0000FF\"><b>VOMIT DETECTED</b></font>")
       } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 

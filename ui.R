@@ -44,7 +44,7 @@ ui <- fluidPage(
       tags$a(href= "https://ko-fi.com/forge", "Buy me a coffe! (and help me pay for the app hosting)"),
       br(),
       br(),
-      tags$a(href= "https://github.com/ForgeGit/ignite_wotlk", "Munching? Vomit? What?")
+      tags$a(href= "https://github.com/ForgeGit/ignite_wotlk", "FAQ: Munching? Vomit? What?")
      
     ),
     mainPanel(

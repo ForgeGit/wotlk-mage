@@ -8,16 +8,6 @@ boss_list <- c(757, #Alga
 
 
 #########################################################################################
-
-
-token <- POST("https://www.warcraftlogs.com/oauth/token",
-              config = list(),
-              body = list(
-                grant_type="client_credentials",
-                client_id=Sys.getenv("warcralog_id_ignite"),
-                client_secret=Sys.getenv("warcralog_secret_ignite"))) %>% 
-  content("parsed")
-#########################################################################################
 url <- "https://classic.warcraftlogs.com/api/v2"
 
 WCL_API2_request <- function(request) {
@@ -317,7 +307,25 @@ ignite_summary <- function(x) {
   
 }
 
+#########################################################################################
 
+extract_log_id <- function(log_url) {
+  # Regular expression pattern to match the log ID
+  pattern <- "(?<=\\/)([A-Za-z0-9]+)(?=#|\\?|$)"
+  
+  # Extract the ID using the pattern
+  match <- regexpr(pattern, log_url, perl = TRUE)
+  if (match == -1) {
+    # The pattern did not match anything
+    return(NA)
+  } else {
+    # Return the matched substring
+    return(substr(log_url, match, match + attr(match, "match.length") - 1))
+  }
+}
+
+
+#########################################################################################
 
 
 server <- function(input, output,session) {
@@ -327,7 +335,7 @@ server <- function(input, output,session) {
   # retrieve list of mages
   observeEvent(input$submit_log_id, {
     
-    request <- sprintf(request_mage, as.character(input$log_id))
+    request <- sprintf(request_mage, as.character(extract_log_id(input$log_id)))
     request1 <- WCL_API2_request(request)
     actors <- request1$data$reportData$report$masterData$actors 
     
@@ -373,15 +381,15 @@ server <- function(input, output,session) {
       
     } else {   
       
-      output$table <- renderDataTable({
-        
-        data.frame(A=c("ERROR"),B=c("ERROR"), C=c("Hi! Yes, This is incomplete"))
-        
-      }) 
+      # output$table <- renderDataTable({
+      #   
+      #   data.frame(A=c("ERROR"),B=c("ERROR"), C=c("Hi! Yes, This is incomplete"))
+      #   
+      # }) 
       
       showModal(modalDialog(
-        title = "AAAAAAAAAAAAAAA",
-        request1,
+        title = "Error",
+        "It looks like the log you just linked does not exist, has no mages, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing",
         easyClose = TRUE,
         footer = tagList(
           modalButton("OK")

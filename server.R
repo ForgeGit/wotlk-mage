@@ -456,10 +456,12 @@ server <- function(input, output,session) {
     request <- request$data$reportData$report$events$data
     
     
-    ignite_table <- request %>% 
+    ignite_table_debug <- request %>% 
       ignite_cleaning() %>% ungroup() %>%
       add_count(targetID) %>%
-      filter(n==max(n)) %>%
+      filter(n==max(n)) 
+    
+    ignite_table <- ignite_table_debug %>%
       ignite_summary()
     
     
@@ -506,7 +508,7 @@ server <- function(input, output,session) {
       
       output$table2 <- renderDataTable({
         
-        ignite_table
+        ignite_table_debug #%>% select()
         
         
       }) 

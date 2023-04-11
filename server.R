@@ -353,7 +353,7 @@ server <- function(input, output,session) {
   # retrieve list of mages
   observeEvent(input$submit_log_id, {
     
-    request <- sprintf(request_mage, as.character(extract_log_id(input$log_id)))
+    request <- sprintf(request_mage, as.character(extract_log_id(as.character(input$log_id))))
     request <- WCL_API2_request(request)
     actors <- request$data$reportData$report$masterData$actors 
     

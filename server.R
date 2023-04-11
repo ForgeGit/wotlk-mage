@@ -508,7 +508,13 @@ server <- function(input, output,session) {
       
       output$table2 <- renderDataTable({
         
-        ignite_table_debug #%>% select()
+        ignite_table_debug %>% 
+          select(-c(hitType, n, munched_temp)) %>%
+          rename(Ignite_Chunk=IGNITE_END ,
+                 time=timestamp,
+                 ability = abilityGameID,
+                 unm_amo = unmitigatedAmount,
+                 time2=timestamp_2)
         
         
       }) 

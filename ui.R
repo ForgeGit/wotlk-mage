@@ -27,6 +27,7 @@ ui <- fluidPage(
       br(),
       br(), 
       span("Forge#0001 [Vivax-Pagle(US)]", style = "font-style:italic"),
+      br(),
       tags$a(href= "https://discord.gg/eszwRckRmA", "Mage Discord"),
       br(),
       br(),

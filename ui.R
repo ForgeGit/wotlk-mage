@@ -12,7 +12,7 @@ ui <- fluidPage(
       br(),
       "- The app currently supports only a limited number of bosses",
       br(),
-      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, and Razorscale)",
+      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale)",
       br(),
       
       # input for log ID

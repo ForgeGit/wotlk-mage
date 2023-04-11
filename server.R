@@ -396,6 +396,10 @@ server <- function(input, output,session) {
                                        encounterID == '752' ~ 'Thorim',
                                        encounterID == '755' ~ 'Vezax',
                                        encounterID == '746'  ~ 'Razosrcale',
+                                       encounterID == '750'  ~ 'Auriaya',
+                                       encounterID == '749'  ~ 'Kologarn',
+                                       encounterID == '745'  ~ 'Ignis',
+                                       encounterID == '751'  ~ 'Hodir',
                                        TRUE ~ encounterID),
                
                encounterID = ifelse(kill==0, 

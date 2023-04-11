@@ -28,12 +28,15 @@ ui <- fluidPage(
       br(), 
       span("Forge#0001 [Vivax-Pagle(US)]", style = "font-style:italic"),
       br(),
-      #    "Consider a donation to upkeep this service:"
+      br(),
       "See my other work: ",
       br(),
-      
-      tags$a(href= "https://github.com/ForgeGit?tab=repositories", "Github")
-      
+      tags$a(href= "https://github.com/ForgeGit?tab=repositories", "Github"),
+      br(),
+      br(),
+      "Consider a donation:",
+      br(),
+      tags$a(href= "https://ko-fi.com/forge", "Buy me a coffe!")
      
     ),
     mainPanel(

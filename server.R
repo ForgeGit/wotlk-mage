@@ -3,7 +3,10 @@
 boss_list <- c(757, #Alga
                752, #Thorim
                755, #Vezax
-               746  #Razorscale
+               746,  #Razorscale
+               750, #Auriaya
+               749, #Kologarn
+               745 #Ignis
 ) 
 
 

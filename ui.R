@@ -10,7 +10,9 @@ ui <- fluidPage(
       br(),
       "- If you do not interact with the app for an extended period, it may temporarily 'grey out.' If this occurs, please refresh the page. If the app crashes after pressing a button, please refresh the page and try again or contact me.",
       br(),
-      "- The app currently supports only a limited number of bosses (Algalon, Thorim, Vezax and Razorscale)",
+      "- The app currently supports only a limited number of bosses",
+      br(),
+      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, and Razorscale)",
       br(),
       
       # input for log ID
@@ -23,6 +25,7 @@ ui <- fluidPage(
       selectInput("fight", "Select Fight:", choices = NULL),
       
       actionButton("submit_char_id","ESTIMATE Ignite Metrics"),
+      br(),
       actionButton("debug_id","debug table"),
       br(),
       br(), 

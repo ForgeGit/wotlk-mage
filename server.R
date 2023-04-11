@@ -317,7 +317,7 @@ ignite_summary <- function(x) {
       
       Total_Ignite_Dmg_Dealt= sum(igniteSUB),
       
-      Total_Ignite_Dmg_Dealt_resist = sim(igniteSUB_resist),
+      Total_Ignite_Dmg_Dealt_resist = sum(igniteSUB_resist),
       
       #Ignite_tick_lost_dead1 = last(igniteREM_IRL), #Does not consider 1st tick calc as valid in the new set of ignite, see example 
       Ignite_tick_lost_dead2 = last(igniteREM),

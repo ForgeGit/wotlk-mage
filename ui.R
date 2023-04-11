@@ -6,11 +6,11 @@ ui <- fluidPage(
     sidebarPanel(
       "Instructions:",
       br(),
-      "Enter log, press ENTER button, select mage and fight, press ESTIMATE button",
+      "- Enter your log, press ENTER, select a mage and boss fight, press ESTIMATE",
       br(),
-      "If you don't do anything for too long, the app will 'grey out', refresh the page if this happens. If the app greys out after pressing something, it crashed.",
+      "- If you do not interact with the app for an extended period, it may temporarily 'grey out.' If this occurs, please refresh the page. If the app crashes after pressing a button, please refresh the page and try again or contact me.",
       br(),
-      "Currently limited boss support (Algalon, Thorim, Vezax and Razorscale)",
+      "- The app currently supports only a limited number of bosses (Algalon, Thorim, Vezax and Razorscale)",
       br(),
       
       # input for log ID
@@ -31,7 +31,10 @@ ui <- fluidPage(
       #    "Consider a donation to upkeep this service:"
       "See my other work: ",
       br(),
-      "https://github.com/ForgeGit?tab=repositories"
+      
+      tags$a(href= "https://github.com/ForgeGit?tab=repositories", "Github")
+      
+     
     ),
     mainPanel(
       # output for data table

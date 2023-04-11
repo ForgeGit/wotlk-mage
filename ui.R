@@ -27,6 +27,7 @@ ui <- fluidPage(
       br(),
       br(), 
       span("Forge#0001 [Vivax-Pagle(US)]", style = "font-style:italic"),
+      tags$a(href= "https://discord.gg/eszwRckRmA", "Mage Discord"),
       br(),
       br(),
       "See my other work: ",
@@ -36,7 +37,10 @@ ui <- fluidPage(
       br(),
       "Consider a donation:",
       br(),
-      tags$a(href= "https://ko-fi.com/forge", "Buy me a coffe!")
+      tags$a(href= "https://ko-fi.com/forge", "Buy me a coffe!"),
+      br(),
+      br(),
+      tags$a(href= "https://github.com/ForgeGit/ignite_wotlk", "Munching? Vomit? What?")
      
     ),
     mainPanel(

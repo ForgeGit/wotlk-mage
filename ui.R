@@ -8,6 +8,8 @@ ui <- fluidPage(
       br(),
       "Enter log, press ENTER button, select mage and fight, press ESTIMATE button",
       br(),
+      "If you don't do anything for too long, the app will 'grey out', refresh the page if this happens. If the app greys out after pressing something, it crashed.",
+      br(),
       "Currently limited boss support (Algalon, Thorim, Vezax and Razorscale)",
       br(),
       

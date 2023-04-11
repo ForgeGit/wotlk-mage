@@ -475,9 +475,9 @@ server <- function(input, output,session) {
       str2 <- paste0( "- Ignite damage dealt: ", (round(ignite_table$Total_Ignite_Dmg_Dealt)))
       str3 <- paste0("- Ignite lost to (target) death: ", round(ignite_table$Ignite_tick_lost_dead2))
       str4 <- paste0( "- Estimated difference: ", Munch_NET_result)
-      if(Munch_NET_result>0 & Munch_NET_result>10) { 
+      if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
         str5 <- paste0("<font color=\"#0000FF\"><b>VOMIT DETECTED</b></font>")
-      } else if(Munch_NET_result<0 & Munch_NET_result<10){ 
+      } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
         str5 <- paste0("<font color=\"#FF0000\"><b>MUNCH DETECTED</b></font>")
         
       } else { 

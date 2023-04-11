@@ -502,7 +502,7 @@ server <- function(input, output,session) {
       str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
       
       
-      HTML(paste(paste0("<h3> Ignite Metrics for ",fight_temp," and ",actor_temp,"</h3>"),
+      HTML(paste(paste0("<h3> Ignite Metrics for ",input$fight," and ",input$character,"</h3>"),
                  "<br/>",
                  str1, str2, 
                  "<br/>",

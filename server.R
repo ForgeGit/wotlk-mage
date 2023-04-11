@@ -94,6 +94,25 @@ request_damage <-'{
         }
         }'
 
+request_spec <-'{
+    reportData {
+        report(code: "%s") {
+            events(
+                dataType: CombatantInfo
+                startTime: 0
+                endTime: 999999999999
+                fightIDs: %i
+                sourceID: %i
+                hostilityType: Friendlies
+                includeResources: true
+                
+            ) {
+                data
+                nextPageTimestamp
+            }
+        }
+    }
+}'
 
 
 spell_filter <- c(1,60488,5019,# necromatic power and misc shoot 
@@ -309,21 +328,20 @@ ignite_summary <- function(x) {
 
 #########################################################################################
 
-extract_log_id <- function(log_url) {
+extract_log_id <- function(log_input) {
   # Regular expression pattern to match the log ID
-  pattern <- "(?<=\\/)([A-Za-z0-9]+)(?=#|\\?|$)"
+  pattern <- "(?<=\\/|^)([A-Za-z0-9]+)(?=[#\\?]|$)"
   
   # Extract the ID using the pattern
-  match <- regexpr(pattern, log_url, perl = TRUE)
+  match <- regexpr(pattern, log_input, perl = TRUE)
   if (match == -1) {
     # The pattern did not match anything
     return(NA)
   } else {
     # Return the matched substring
-    return(substr(log_url, match, match + attr(match, "match.length") - 1))
+    return(substr(log_input, match, match + attr(match, "match.length") - 1))
   }
 }
-
 
 #########################################################################################
 
@@ -409,7 +427,30 @@ server <- function(input, output,session) {
     actor_temp <- parse_number(input$character)
     fight_temp <- parse_number(input$fight)
     
+    ### Spec detection
+    spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
+    request <- sprintf(request_spec, as.character(input$log_id),as.numeric(fight_temp), as.numeric(actor_temp))
+    request <- WCL_API2_request(request)
+    request <- request$data$reportData$report$events$data
+    
+    if(length(request)!=0){
+      request <-  request[[32]][[1]][[1]]
+      
+      spec$arcane_tree[1] = request[1]
+      spec$fire_tree[1] = request[2]
+      spec$frost_tree[1] = request[3]
+      
+    } else{spec <- "No Spec"}
+    
+    spec <- spec %>% mutate(   
+      spec = ifelse(arcane_tree>fire_tree & arcane_tree>frost_tree,"Arcane",
+                    ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
+    
+    spec <- as.character(spec$spec[1])
+    
+    if(spec=="Fire"){
+    ### Damage and casts extraction
     request <- sprintf(request_damage, as.character(input$log_id), as.numeric(actor_temp), as.numeric(fight_temp))
     request <- WCL_API2_request(request)
     request <- request$data$reportData$report$events$data
@@ -429,18 +470,26 @@ server <- function(input, output,session) {
       
     }) 
     
-    output$summary <- renderText({
-      paste0("Ignite lost to (target) death: ", max(ignite_table$Ignite_tick_lost_dead2), "\n",
-             "Estimated Ignite Damage: ", max(ignite_table$Munch_NET_2))
-    })
-    
-    
     output$summary <- renderUI({
       str1 <- paste0("Ignite lost to (target) death: ", round(ignite_table$Ignite_tick_lost_dead2))
       str2 <- paste0( "Estimated Ignite Damage difference: ", (round(ignite_table$Munch_NET_2)*-1))
       HTML(paste(str1, str2, sep = '<br/>'))
       
     })
+    
+    } else {
+      
+      showModal(modalDialog(
+        title = "Error",
+        paste0("It looks like that character is a ",spec," Mage on that log. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("OK")
+        )
+      ))
+      
+
+    }
     
   })
 }

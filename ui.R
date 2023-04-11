@@ -1,6 +1,6 @@
 ui <- fluidPage(
   
-  titlePanel(paste0(("Ignite Analyzer"))),
+  titlePanel(paste0(("Ignite Analyzer - BETA"))),
   
   sidebarLayout(
     sidebarPanel(

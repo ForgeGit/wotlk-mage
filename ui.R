@@ -6,7 +6,11 @@ ui <- fluidPage(
     sidebarPanel(
       "Instructions:",
       br(),
-      "- Enter your log, press ENTER, select a mage and boss fight, press ESTIMATE",
+      "1.- Enter your log, press ENTER",
+      br(),
+      "2.- Select a mage and boss fight, press ESTIMATE",
+      br(),
+      "3.- Repeat step 2 for each fight/mage",
       br(),
       "- If you do not interact with the app for an extended period, it may temporarily 'grey out.' If this occurs, please refresh the page. If the app crashes after pressing a button, please refresh the page and try again or contact me.",
       br(),

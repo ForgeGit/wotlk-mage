@@ -515,7 +515,7 @@ server <- function(input, output,session) {
                  paste0("<h4> Other Ignite metrics </h4>"),
                  str2_res,
                  str_max,
-                 str_min,
+               #str_min,
                  
                  sep = '<br/>'))
       

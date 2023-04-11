@@ -463,12 +463,7 @@ server <- function(input, output,session) {
       ignite_summary()
     
     
-    output$table2 <- renderDataTable({
-      
-      ignite_table
-      
-      
-    }) 
+
     
     output$summary <- renderUI({
 
@@ -507,4 +502,18 @@ server <- function(input, output,session) {
     }
     
   })
+  
+observeEvent(input$debug_id, {
+    
+  
+  output$table2 <- renderDataTable({
+    
+    ignite_table
+    
+    
+  }) 
+  
+}) 
+  
+  
 }

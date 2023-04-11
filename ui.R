@@ -13,13 +13,15 @@ ui <- fluidPage(
       # input for fight selection
       selectInput("fight", "Select Fight:", choices = NULL),
       
-      actionButton("submit_char_id","Estimate Ignite Metrics")
+      actionButton("submit_char_id","Estimate Ignite Metrics"),
+      actionButton("debug_id","DEBUG TABLE")
+      
     ),
     mainPanel(
       # output for data table
       #  dataTableOutput("table"),
-      dataTableOutput("table2"),
-      htmlOutput("summary")
+      htmlOutput("summary"),
+      dataTableOutput("table2")
     )
   )
 )

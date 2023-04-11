@@ -139,7 +139,8 @@ spell_filter <- c(1,60488,5019,# necromatic power and misc shoot
                   42931, 42930, 10160, 27087, 10159, 8492, 120,10161, #CoC
                   54043, #retri aura
                   42897, 42896 , 30451 , 42894, #Arcane Blasts (all) 
-                  42937,42198, 42211, 42210, 42213, 42209, 42212,42208 # blizzards
+                  42937,42198, 42211, 42210, 42213, 42209, 42212,42208, # blizzards
+                  28715 #Flame Cap
 )
 
 
@@ -491,9 +492,9 @@ server <- function(input, output,session) {
       str3 <- paste0("- Ignite lost to (target) death: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
       str4 <- paste0( "- Estimated difference: ",  prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
       if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
-        str5 <- paste0("<font color=\"#0000FF\"><b>You dealt more ignite damage than expected. This means VOMIT was present in your casts.</b></font>")
+        str5 <- paste0("<font color=\"#0000FF\"><b>You dealt more ignite damage than expected. This means VOMIT was present in some of your casts.</b></font>")
       } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
-        str5 <- paste0("<font color=\"#FF0000\"><b>You dealt less ignite damage than expected. This means MUNCH was present in your casts.</b></font>")
+        str5 <- paste0("<font color=\"#FF0000\"><b>You dealt less ignite damage than expected. This means MUNCH was present in some of your casts.</b></font>")
         
       } else { 
         str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
@@ -523,7 +524,7 @@ server <- function(input, output,session) {
       
       showModal(modalDialog(
         title = "Error",
-        paste0("It looks like that character is a ",spec," Mage on that log. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
+        paste0("It looks like that character is ",spec," Mage on that log. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
         easyClose = TRUE,
         footer = tagList(
           modalButton("OK")

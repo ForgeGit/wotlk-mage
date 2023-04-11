@@ -471,9 +471,24 @@ server <- function(input, output,session) {
     }) 
     
     output$summary <- renderUI({
-      str1 <- paste0("Ignite lost to (target) death: ", round(ignite_table$Ignite_tick_lost_dead2))
-      str2 <- paste0( "Estimated Ignite Damage difference: ", (round(ignite_table$Munch_NET_2)*-1))
-      HTML(paste(str1, str2, sep = '<br/>'))
+
+      Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
+        
+      str1 <- paste0( "- Expected ignite damage: ", (round(Total_Ignite_Dmg_Potential)))
+      str2 <- paste0( "- Ignite damage dealt: ", (round(Total_Ignite_Dmg_Dealt)))
+      str3 <- paste0("- Ignite lost to (target) death: ", round(ignite_table$Ignite_tick_lost_dead2))
+      str4 <- paste0( "- Estimated difference: ", Munch_NET_result)
+      if(Munch_NET_result>0 & Munch_NET_result>Munch_NET_result+10) { 
+        str5 <- paste0("<font color=\"#0000FF\"><b>VOMIT DETECTED</b></font>")
+      } else if(Munch_NET_result<0 & Munch_NET_result<Munch_NET_result-10){ 
+        str5 <- paste0("<font color=\"#FF0000\"><b>MUNCH DETECTED</b></font>")
+        
+      } else { 
+        str5 <- paste0("<font color=\"#5A5A5A\"><b>EXPECTED IGNITE</b></font>")  
+      }
+      
+      
+      HTML(paste(str1, str2, str3, str4,str5, sep = '<br/>'))
       
     })
     

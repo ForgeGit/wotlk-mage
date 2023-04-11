@@ -219,8 +219,13 @@ ignite_cleaning <- function(x) {
     mutate(igniteADD = ifelse(abilityGameID!="Ignite", 
                               amount*0.4,0), # Rounding
            igniteSUB = ifelse(abilityGameID=="Ignite", 
-                              unmitigatedAmount,0),
-           igniteSUB= ifelse(is.na(igniteSUB),0,igniteSUB), # Immunes fix
+                              unmitigatedAmount,0), 
+           igniteSUB_resist = ifelse(abilityGameID=="Ignite", 
+                              amount,0),
+           
+           igniteSUB= ifelse(is.na(igniteSUB),0,igniteSUB), 
+           
+           igniteSUB_resist = ifelse(is.na(igniteSUB_resist),0,igniteSUB_resist),
            
            igniteCUM =  cumsum(igniteADD),
            
@@ -311,6 +316,8 @@ ignite_summary <- function(x) {
       Total_Ignite_Dmg_Potential = sum(igniteADD),
       
       Total_Ignite_Dmg_Dealt= sum(igniteSUB),
+      
+      Total_Ignite_Dmg_Dealt_resist = sim(igniteSUB_resist),
       
       #Ignite_tick_lost_dead1 = last(igniteREM_IRL), #Does not consider 1st tick calc as valid in the new set of ignite, see example 
       Ignite_tick_lost_dead2 = last(igniteREM),
@@ -464,7 +471,7 @@ server <- function(input, output,session) {
     ignite_table <- ignite_table_debug %>%
       ignite_summary()
     
-    
+  
 
     
     output$summary <- renderUI({
@@ -472,7 +479,8 @@ server <- function(input, output,session) {
       Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
         
       str1 <- paste0( "- Expected ignite damage: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
-      str2 <- paste0( "- Ignite damage dealt: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
+      str2 <- paste0( "- Ignite damage dealt (before resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
+      str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
       str3 <- paste0("- Ignite lost to (target) death: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
       str4 <- paste0( "- Estimated difference: ",  prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
       if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
@@ -485,7 +493,7 @@ server <- function(input, output,session) {
       }
       
       
-      HTML(paste(str1, str2, str3, str4,str5, sep = '<br/>'))
+      HTML(paste(str1, str2,str2_res, str3, str4,str5, sep = '<br/>'))
       
     })
     

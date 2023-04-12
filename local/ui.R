@@ -1,6 +1,6 @@
 ui <- fluidPage(
   
-  titlePanel(paste0(("WOTLK Mage Analyzer - BETA"))),
+  titlePanel(title=div(img(src="https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg"), "WOTLK Mage Analyzer - BETA")),
   
   sidebarLayout(
     sidebarPanel(

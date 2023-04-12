@@ -489,7 +489,10 @@ server <- function(input, output,session) {
       
       ## Sub-spec detection
       sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],"TTW",ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB","Error - Contact Forge#0001"))
-      
+      spec_image <- ifelse(sub_spec=="TTW",
+                           "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_flamebolt.jpg' height='25' width='25'/>",
+                           ifelse(sub_spec=="FFB","<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
+                                  "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
       ### Damage and casts extraction
       request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
       request <- WCL_API2_request(request)
@@ -535,9 +538,10 @@ server <- function(input, output,session) {
         str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
         str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
         
-        
         ## Final format
-        HTML(paste(paste0("<h3> Metrics for ",input$character," on ",input$fight," - ",sub_spec,"</h3>"),
+        HTML(paste(paste0("<h3> Metrics for ",input$character,
+                          " on ",input$fight," - ",
+                          sub_spec," ",spec_image,"</h3>"),
                    paste0("<h4> Ignite Measurement </h4>"),
                    str5,
                    str1, str2, 

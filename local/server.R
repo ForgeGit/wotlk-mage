@@ -549,14 +549,14 @@ server <- function(input, output,session) {
           
           Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
           
-          str1 <- paste0( "- Expected ignite damage (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
-          str2 <- paste0( "- Ignite damage dealt (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
+          str1 <- paste0( "- Expected ignite damage <sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
+          str2 <- paste0( "- Actual ignite damage dealt <sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
           str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
           str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
-          str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
-                         " - (",
-                         prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE)," + ", prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
-                         ") = ", prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
+          str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE), " - ",
+                                   prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE),
+                                   " = ",
+                         prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
           
           if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
             ## Vomit trigger
@@ -572,7 +572,11 @@ server <- function(input, output,session) {
           }
           str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
-          
+          str_summ1 <- paste0("- Final expected ignite damage dealt <sup>*</sup>: ",
+                              prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
+                               " - ",  
+                               prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
+                               " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
           
           str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
           ## Final format
@@ -581,8 +585,11 @@ server <- function(input, output,session) {
                             sub_spec," ",spec_image,"</h3>"),
                      paste0("<h4> Ignite Measurement </h4>"),
                      str5,
-                     str1, str2, 
-                     str3, 
+                     str1, #Expected ignite damage 
+                     str3, # Lost death
+                     str_summ1, 
+                     "<br/",
+                     str2, 
                      paste0("<b>Result:</b> ",str4),
                      "<br/",
                      paste0("<h4> Other Ignite metrics </h4>"),
@@ -597,7 +604,8 @@ server <- function(input, output,session) {
                      "<br/",
                      "<br/",
                      paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
-                     paste0("<i><sup>2</sup> This is the # if Living Bombs refreshed BEFORE they had time to explode.</i>"), 
+                     paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
+                     paste0("<i><sup>*</sup> This numbers are BEFORE partial resists.</i>"), 
                      sep = '<br/>'))
           
         })

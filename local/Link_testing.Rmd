@@ -62,3 +62,64 @@ extract_log_idB(testing_unit)
 ```
 
 
+```{r}
+request_cast<-'{
+    reportData {
+        report(code: "%s") {
+            events(
+                dataType: Casts
+                startTime: 0
+                endTime: 999999999999
+                fightIDs: %i
+                sourceID: %i
+                hostilityType: Friendlies
+                includeResources: true
+                
+            ) {
+                data
+                nextPageTimestamp
+            }
+        }
+    }
+}'
+
+
+    request <- sprintf(request_cast, "TKLVmnH7QJPYZWM2",
+                       4, 15)
+    request <- WCL_API2_request(request)
+
+a<- request$data$reportData$report$events$data
+
+```
+
+```{r}
+request_debuff<-'{
+    reportData {
+        report(code: "%s") {
+            events(
+                dataType: Debuffs
+                startTime: 0
+                endTime: 999999999999
+                fightIDs: %i
+                sourceID: %i
+                targetID: %i
+                hostilityType: Enemies
+                includeResources: true
+                
+            ) {
+                data
+                nextPageTimestamp
+            }
+        }
+    }
+}'
+
+
+    request <- sprintf(request_debuff, "PVTNF1btkQqM23hc",
+                       3, 44, 7)
+    request <- WCL_API2_request(request)
+
+a<- request$data$reportData$report$events$data
+
+```
+

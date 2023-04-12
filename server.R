@@ -410,7 +410,7 @@ server <- function(input, output,session) {
       margin-top: 0;
       margin-bottom: 0;
     }
-  ")),
+  "))
   
   # retrieve list of mages
   observeEvent(input$submit_log_id, {

@@ -574,7 +574,7 @@ server <- function(input, output,session) {
           str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           
           
-          str_lb_clip <- paste0("- Living Bombs clipped: ", nrow(debuff_table))
+          str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
           ## Final format
           HTML(paste(paste0("<h3> Metrics for ",actor_name,
                             " on ",fight_name," - ",
@@ -596,9 +596,8 @@ server <- function(input, output,session) {
                      "<br/",
                      "<br/",
                      "<br/",
-                     "<br/",
-                     "<br/",
                      paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
+                     paste0("<i><sup>2</sup> This is the # if Living Bombs refreshed BEFORE they had time to explode.</i>"), 
                      sep = '<br/>'))
           
         })

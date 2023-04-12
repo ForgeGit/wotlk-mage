@@ -1,2 +1,4 @@
 
-app.R
+local/.Renviron
+local/.Rproj.user/
+local/.Rhistory

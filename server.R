@@ -6,7 +6,8 @@ boss_list <- c(757, #Alga
                746,  #Razorscale
                750, #Auriaya
                749, #Kologarn
-               745 #Ignis
+               745, #Ignis
+               751, #Hodir
 ) 
 
 

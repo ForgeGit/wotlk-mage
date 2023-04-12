@@ -1,0 +1,64 @@
+---
+title: "Test"
+output: html_document
+date: "2023-04-12"
+---
+
+```{r}
+extract_log_idB <- function(log_input) {
+  # Regular expression pattern to match the log ID
+  pattern <- "(?<=\\/|\\#|^)([A-Za-z0-9]+)(?=\\/?\\#|\\?|\\/$|$)"
+  
+  # Extract the ID using the pattern
+  match <- regexpr(pattern, log_input, perl = TRUE)
+  if (match == -1) {
+    # The pattern did not match anything
+    return(NA)
+  } else {
+    # Return the matched substring
+    return(substr(log_input, match, match + attr(match, "match.length") - 1))
+  }
+}
+
+
+
+extract_log_idA <- function(log_input) {
+  # Regular expression pattern to match the log ID
+  pattern <- "(?<=\\/|^)([A-Za-z0-9]+)(?=[#\\?]|$)"
+  
+  # Extract the ID using the pattern
+  match <- regexpr(pattern, log_input, perl = TRUE)
+  if (match == -1) {
+    # The pattern did not match anything
+    return(NA)
+  } else {
+    # Return the matched substring
+    return(substr(log_input, match, match + attr(match, "match.length") - 1))
+  }
+}
+
+
+```
+
+
+```{r}
+
+testing_unit <- c("https://classic.warcraftlogs.com/reports/TKLVmnH7QJPYZWM2",
+  "https://classic.warcraftlogs.com/reports/TKLVmnH7QJPYZWM2#fight=10",
+  "HryTLDZGj7Yk3vMb",
+  "https://classic.warcraftlogs.com/reports/pG4K7mQR6NdzPcxg#fight=14&type=damage-done",
+  "https://classic.warcraftlogs.com/reports/MbjN2dTx1KCA6zhF/#boss=-2&difficulty=0&view=rankings",
+  "https://classic.warcraftlogs.com/reports/pG4K7mQR6NdzPcxg#playermetric=bossdps&boss=-3&difficulty=0&view=replay"
+)
+
+# Examples
+extract_log_idA(testing_unit)
+# Returns "TKLVmnH7QJPYZWM2"
+
+extract_log_idB(testing_unit)
+# Returns "TKLVmnH7QJPYZWM2"
+
+
+```
+
+

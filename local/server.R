@@ -140,6 +140,26 @@ request_debuff<-'{
     }
 }'
 
+request_cast<-'{
+    reportData {
+        report(code: "%s") {
+            events(
+                dataType: Casts
+                startTime: 0
+                endTime: 999999999999
+                fightIDs: %i
+                sourceID: %i
+                targetID: %i
+                hostilityType: Friendlies
+                includeResources: false
+                
+            ) {
+                data
+                nextPageTimestamp
+            }
+        }
+    }
+}'
 
 spell_filter <- c(1,60488,5019,# necromatic power and misc shoot 
                   55039,# Gnomish Lightning Generator
@@ -385,6 +405,13 @@ server <- function(input, output,session) {
   actors <- NULL
   fights <- NULL
   
+  tags$style(HTML("
+    h4, .h4 {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  ")),
+  
   # retrieve list of mages
   observeEvent(input$submit_log_id, {
     
@@ -477,7 +504,7 @@ server <- function(input, output,session) {
     
   })
   
-  # retrieve list of mages
+  # retrieve data and estimations
   observeEvent(input$submit_char_id, {
     
     actor_temp <- parse_number(input$character)
@@ -519,7 +546,8 @@ server <- function(input, output,session) {
                            ifelse(sub_spec=="FFB","<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
                                   "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
       ### Damage and casts extraction
-      request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
+      request <- sprintf(request_damage,
+                         as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
       request <- WCL_API2_request(request)
       request <- request$data$reportData$report$events$data
       if(length(request)!=0){
@@ -543,9 +571,24 @@ server <- function(input, output,session) {
           filter(abilityGameID ==55360 & 
                    type == "refreshdebuff")
         
+        ### Cast gaps extraction
+        request <- sprintf(request_cast, 
+                            as.character(extract_log_id(as.character(input$log_id))), 
+                            as.numeric(fight_temp), as.numeric(actor_temp), max(ignite_table_debug$targetID,na.rm=T))
+        request <- WCL_API2_request(request)
+        
+        casts <- request$data$reportData$report$events$data%>% 
+          filter(abilityGameID==42833 | abilityGameID==42891) %>%
+          select(timestamp,abilityGameID) %>%
+          mutate(delay = timestamp-lag(timestamp)) %>%
+          filter(delay<750)
+        
+        
         ## Render output
         
         output$summary <- renderUI({
+          
+          ### Munching ###
           
           Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
           
@@ -570,6 +613,9 @@ server <- function(input, output,session) {
           } else { 
             str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
           }
+          
+          ### Ignite ###
+          
           str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_summ1 <- paste0("- Final expected ignite damage dealt <sup>*</sup>: ",
@@ -577,8 +623,17 @@ server <- function(input, output,session) {
                                " - ",  
                                prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
                                " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
+          ### Living bomb ###
           
           str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
+          
+          ### Delay gaps ###
+          
+          str_delay_1 <- paste0("- Avg. Delay: ", mean(casts$delay,na.rm=T)," ms")
+          str_delay_2 <- paste0("- Max. Delay: ", max(casts$delay,na.rm=T), " ms")
+          str_delay_3 <- paste0("- Min Delay: ", min(casts$delay,na.rm=T) , " ms")
+          str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts))
+          
           ## Final format
           HTML(paste(paste0("<h3> Metrics for ",actor_name,
                             " on ",fight_name," - ",
@@ -598,9 +653,12 @@ server <- function(input, output,session) {
                      "<br/",
                      paste0("<h4> Living Bomb metrics </h4>"),
                      str_lb_clip,
+                     "<br/",
+                     paste0("<h4> Work-in-progress (On-going testing)</h4>"),
+                     paste0("Milliseconds (ms) between Fireball and Pyroblast casts (<750ms):"),
+                     str_delay_4,str_delay_1,
+                     str_delay_2,str_delay_3,
                      #str_min,
-                     "<br/",
-                     "<br/",
                      "<br/",
                      "<br/",
                      paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 

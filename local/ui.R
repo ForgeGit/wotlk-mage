@@ -1,6 +1,6 @@
 ui <- fluidPage(
   
-  tags$head(tags$link(rel="shortcut icon", href="https://raw.githubusercontent.com/ForgeGit/wotlk-mage/main/local/classicon_mage.ico")),
+  tags$head(tags$link(rel="shortcut icon", href="https://raw.githubusercontent.com/ForgeGit/wotlk-mage/main/local/ourignite.ico")),
   
   titlePanel(title=div(img(src="https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg"), "WOTLK Mage Analyzer - BETA"),
              windowTitle="WOTLK Mage Analyzer"),

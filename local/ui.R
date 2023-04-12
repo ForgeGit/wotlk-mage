@@ -1,6 +1,9 @@
 ui <- fluidPage(
   
-  titlePanel(title=div(img(src="https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg"), "WOTLK Mage Analyzer - BETA")),
+  tags$head(tags$link(rel="shortcut icon", href="URL-to-favicon")),
+  
+  titlePanel(title=div(img(src="https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg"), "WOTLK Mage Analyzer - BETA"),
+             windowTitle="WOTLK Mage Analyzer"),
   
   sidebarLayout(
     sidebarPanel(

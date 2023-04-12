@@ -2,6 +2,13 @@ ui <- fluidPage(
   
   tags$head(tags$link(rel="shortcut icon", href="https://raw.githubusercontent.com/ForgeGit/wotlk-mage/main/local/ourignite.ico")),
   
+  tags$style(HTML("
+    h4, .h4 {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  ")),
+  
   titlePanel(title=div(img(src="https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg"), "WOTLK Mage Analyzer - BETA"),
              windowTitle="WOTLK Mage Analyzer"),
   
@@ -31,7 +38,7 @@ ui <- fluidPage(
       # input for fight selection
       selectInput("fight", "Select Fight:", choices = NULL),
       
-      actionButton("submit_char_id","ESTIMATE Ignite Metrics"),
+      actionButton("submit_char_id","ESTIMATE Metrics"),
       br(),
       actionButton("debug_id","debug table"),
       br(),

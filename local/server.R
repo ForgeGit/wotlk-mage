@@ -226,7 +226,7 @@ ignite_cleaning <- function(x) {
            igniteSUB = ifelse(abilityGameID=="Ignite", 
                               unmitigatedAmount,0), 
            igniteSUB_resist = ifelse(abilityGameID=="Ignite", 
-                              amount,0),
+                                     amount,0),
            
            igniteSUB= ifelse(is.na(igniteSUB),0,igniteSUB), 
            
@@ -484,74 +484,78 @@ server <- function(input, output,session) {
     spec <- as.character(spec$spec[1])
     
     if(spec=="Fire"){
-    ### Damage and casts extraction
-    request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
-    request <- WCL_API2_request(request)
-    request <- request$data$reportData$report$events$data
-    
-    
-    ignite_table_debug <- request %>% 
-      ignite_cleaning() %>% ungroup() %>%
-      add_count(targetID) %>%
-      filter(n==max(n)) 
-    
-    ignite_table <- ignite_table_debug %>%
-      ignite_summary()
-    
-  
-
-    
-    output$summary <- renderUI({
       
-      Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
+      ## Sub-spec detection
+      sub_spec <- ifelse(arcane_tree>frost_tree,"TTW",ifelse(frost_tree>arcane_tree,"FFB","Error - Contact Forge#0001"))
       
-      str1 <- paste0( "- Expected ignite damage (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
-      str2 <- paste0( "- Ignite damage dealt (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
-      str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
-      str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
-      str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
-                     " - (",
-                     prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE)," + ", prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
-                     ") = ", prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
-      
-      if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
-        ## Vomit trigger
-        str5 <- paste0("<font color=\"#0000FF\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
-                       " more than expected. <br> This means VOMIT was present at some point.</b></font>")
-        ## Munch Trigger
-      } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
-        str5 <- paste0("<font color=\"#FF0000\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
-                       " less than expected. <br> This means MUNCH was present at some point.</b></font>")
-        ## Expected ignite
-      } else { 
-        str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
-      }
-      str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
-      str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+      ### Damage and casts extraction
+      request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
+      request <- WCL_API2_request(request)
+      request <- request$data$reportData$report$events$data
       
       
-      HTML(paste(paste0("<h3> Metrics for ",input$character," on ",input$fight,"</h3>"),
-                 paste0("<h4> Ignite Measurement </h4>"),
-                 str5,
-                 str1, str2, 
-                 str3, 
-                 paste0("<b>Result:</b> ",str4),
-                 "<br/",
-                 paste0("<h4> Other Ignite metrics </h4>"),
-                 str2_res,
-                 str_max,
-                 #str_min,
-                 "<br/",
-                 "<br/",
-                 "<br/",
-                 "<br/",
-                 "<br/",
-                 "<br/",
-                 paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
-                 sep = '<br/>'))
+      ignite_table_debug <- request %>% 
+        ignite_cleaning() %>% ungroup() %>%
+        add_count(targetID) %>%
+        filter(n==max(n)) 
       
-    })
-    
+      ignite_table <- ignite_table_debug %>%
+        ignite_summary()
+      
+      
+      
+      
+      output$summary <- renderUI({
+        
+        Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
+        
+        str1 <- paste0( "- Expected ignite damage (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
+        str2 <- paste0( "- Ignite damage dealt (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
+        str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
+        str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
+        str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
+                       " - (",
+                       prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE)," + ", prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
+                       ") = ", prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
+        
+        if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
+          ## Vomit trigger
+          str5 <- paste0("<font color=\"#0000FF\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+                         " more than expected. <br> This means VOMIT was present at some point.</b></font>")
+          ## Munch Trigger
+        } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
+          str5 <- paste0("<font color=\"#FF0000\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+                         " less than expected. <br> This means MUNCH was present at some point.</b></font>")
+          ## Expected ignite
+        } else { 
+          str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
+        }
+        str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+        str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+        
+        
+        HTML(paste(paste0("<h3> Metrics for ",input$character," on ",input$fight,"</h3>"),
+                   paste0("<h4> Ignite Measurement </h4>"),
+                   str5,
+                   str1, str2, 
+                   str3, 
+                   paste0("<b>Result:</b> ",str4),
+                   "<br/",
+                   paste0("<h4> Other Ignite metrics </h4>"),
+                   str2_res,
+                   str_max,
+                   #str_min,
+                   "<br/",
+                   "<br/",
+                   "<br/",
+                   "<br/",
+                   "<br/",
+                   "<br/",
+                   paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
+                   sep = '<br/>'))
+        
+      })
+      
     } else {
       
       showModal(modalDialog(
@@ -563,7 +567,7 @@ server <- function(input, output,session) {
         )
       ))
       
-
+      
     }
     
     observeEvent(input$debug_id, {
@@ -586,7 +590,7 @@ server <- function(input, output,session) {
     
   })
   
-
+  
   
   
 }

@@ -119,6 +119,28 @@ request_spec <-'{
 }'
 
 
+request_debuff<-'{
+    reportData {
+        report(code: "%s") {
+            events(
+                dataType: Debuffs
+                startTime: 0
+                endTime: 999999999999
+                fightIDs: %i
+                sourceID: %i
+                targetID: %i
+                hostilityType: Enemies
+                includeResources: true
+                
+            ) {
+                data
+                nextPageTimestamp
+            }
+        }
+    }
+}'
+
+
 spell_filter <- c(1,60488,5019,# necromatic power and misc shoot 
                   55039,# Gnomish Lightning Generator
                   49909, #icy touch
@@ -226,7 +248,7 @@ ignite_cleaning <- function(x) {
            igniteSUB = ifelse(abilityGameID=="Ignite", 
                               unmitigatedAmount,0), 
            igniteSUB_resist = ifelse(abilityGameID=="Ignite", 
-                              amount,0),
+                                     amount,0),
            
            igniteSUB= ifelse(is.na(igniteSUB),0,igniteSUB), 
            
@@ -342,7 +364,7 @@ ignite_summary <- function(x) {
 
 extract_log_id <- function(log_input) {
   # Regular expression pattern to match the log ID
-  pattern <- "(?<=\\/|^)([A-Za-z0-9]+)(?=[#\\?]|$)"
+  pattern <- "(?<=\\/|\\#|^)([A-Za-z0-9]+)(?=\\/?\\#|\\?|\\/$|$)"
   
   # Extract the ID using the pattern
   match <- regexpr(pattern, log_input, perl = TRUE)
@@ -354,6 +376,7 @@ extract_log_id <- function(log_input) {
     return(substr(log_input, match, match + attr(match, "match.length") - 1))
   }
 }
+
 
 #########################################################################################
 
@@ -388,30 +411,47 @@ server <- function(input, output,session) {
       # retrieve list of fights
       request <- sprintf(request_fights, as.character(extract_log_id(as.character(input$log_id))))
       request <- WCL_API2_request(request)
-      fights <- request$data$reportData$report$fights 
-      fights <- fights %>% 
-        filter(encounterID%in% boss_list) %>% 
+      fights <- request$data$reportData$report$fights
+      
+      if(length(fights)!=0){
         
-        mutate(encounterID = as.character(encounterID),
-               
-               encounterID = case_when(encounterID == '757' ~ 'Algalon',
-                                       encounterID == '752' ~ 'Thorim',
-                                       encounterID == '755' ~ 'Vezax',
-                                       encounterID == '746'  ~ 'Razosrcale',
-                                       encounterID == '750'  ~ 'Auriaya',
-                                       encounterID == '749'  ~ 'Kologarn',
-                                       encounterID == '745'  ~ 'Ignis',
-                                       encounterID == '751'  ~ 'Hodir',
-                                       TRUE ~ encounterID),
-               
-               encounterID = ifelse(kill==0, 
-                                    paste0(encounterID, " (Fight:",id,") - Wipe"), 
-                                    paste0(encounterID, " (Fight:",id,") - Kill")
-               )
-        )
-      
-      updateSelectInput(session, "fight", choices = fights$encounterID)
-      
+        fights <- fights %>% 
+          filter(encounterID%in% boss_list) %>% 
+          
+          mutate(encounterID = as.character(encounterID),
+                 
+                 encounterID = case_when(encounterID == '757' ~ 'Algalon',
+                                         encounterID == '752' ~ 'Thorim',
+                                         encounterID == '755' ~ 'Vezax',
+                                         encounterID == '746'  ~ 'Razosrcale',
+                                         encounterID == '750'  ~ 'Auriaya',
+                                         encounterID == '749'  ~ 'Kologarn',
+                                         encounterID == '745'  ~ 'Ignis',
+                                         encounterID == '751'  ~ 'Hodir',
+                                         TRUE ~ encounterID),
+                 
+                 encounterID = ifelse(kill==0, 
+                                      paste0(encounterID, " (Fight:",id," - Wipe)"), 
+                                      paste0(encounterID, " (Fight:",id," - Kill)")
+                 )
+          )
+        
+        updateSelectInput(session, "fight", choices = fights$encounterID)
+        
+      } else {
+        
+        showModal(modalDialog(
+          title = "Error #2",
+          "It looks like the log you just linked does not have valid fights for analysis, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing.",
+          easyClose = TRUE,
+          footer = tagList(
+            modalButton("OK")
+          )
+        ))
+        
+        
+      }
+      ## No mages?
       
     } else {   
       
@@ -422,7 +462,7 @@ server <- function(input, output,session) {
       # }) 
       
       showModal(modalDialog(
-        title = "Error",
+        title = "Error #1",
         "It looks like the log you just linked does not exist, has no mages, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing",
         easyClose = TRUE,
         footer = tagList(
@@ -442,7 +482,8 @@ server <- function(input, output,session) {
     
     actor_temp <- parse_number(input$character)
     fight_temp <- parse_number(input$fight)
-    
+    fight_name <- input$fight
+    actor_name <- input$character
     ### Spec detection
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
@@ -457,71 +498,127 @@ server <- function(input, output,session) {
       spec$fire_tree[1] = request[2]
       spec$frost_tree[1] = request[3]
       
+      spec_main <- spec
+      
+      spec <- spec %>% mutate(   
+        spec = ifelse(arcane_tree>fire_tree & arcane_tree>frost_tree,"Arcane",
+                      ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
+      
+      spec <- as.character(spec$spec[1])
+      
     } else{spec <- "No Spec"}
     
-    spec <- spec %>% mutate(   
-      spec = ifelse(arcane_tree>fire_tree & arcane_tree>frost_tree,"Arcane",
-                    ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
     
-    spec <- as.character(spec$spec[1])
     
     if(spec=="Fire"){
-    ### Damage and casts extraction
-    request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
-    request <- WCL_API2_request(request)
-    request <- request$data$reportData$report$events$data
-    
-    
-    ignite_table_debug <- request %>% 
-      ignite_cleaning() %>% ungroup() %>%
-      add_count(targetID) %>%
-      filter(n==max(n)) 
-    
-    ignite_table <- ignite_table_debug %>%
-      ignite_summary()
-    
-  
-
-    
-    output$summary <- renderUI({
-
-      Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
+      
+      ## Sub-spec detection
+      sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],"TTW",ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB","Error - Contact Forge#0001"))
+      spec_image <- ifelse(sub_spec=="TTW",
+                           "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_flamebolt.jpg' height='25' width='25'/>",
+                           ifelse(sub_spec=="FFB","<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
+                                  "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
+      ### Damage and casts extraction
+      request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
+      request <- WCL_API2_request(request)
+      request <- request$data$reportData$report$events$data
+      if(length(request)!=0){
         
-      str1 <- paste0( "- Expected ignite damage (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
-      str2 <- paste0( "- Ignite damage dealt (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
-      str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
-      str3 <- paste0("- Ignite lost to (target) death: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
-      str4 <- paste0( "- Estimated difference: ",  prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
-      if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
-        str5 <- paste0("<font color=\"#0000FF\"><b>You dealt more ignite damage than expected. This means VOMIT was present in some of your casts.</b></font>")
-      } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
-        str5 <- paste0("<font color=\"#FF0000\"><b>You dealt less ignite damage than expected. This means MUNCH was present in some of your casts.</b></font>")
         
-      } else { 
-        str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
+        ignite_table_debug <- request %>% 
+          ignite_cleaning() %>% ungroup() %>%
+          add_count(targetID) %>%
+          filter(n==max(n)) 
+        
+        ignite_table <- ignite_table_debug %>%
+          ignite_summary()
+        
+        ### Debuff LB extraction
+        request <- sprintf(request_debuff, 
+                           as.character(extract_log_id(as.character(input$log_id))), 
+                           as.numeric(fight_temp), max(ignite_table_debug$targetID,na.rm=T), as.numeric(actor_temp))
+        request <- WCL_API2_request(request)
+        debuff_table <- request$data$reportData$report$events$data
+        debuff_table <- debuff_table %>% 
+          filter(abilityGameID ==55360 & 
+                   type == "refreshdebuff")
+        
+        ## Render output
+        
+        output$summary <- renderUI({
+          
+          Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
+          
+          str1 <- paste0( "- Expected ignite damage (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
+          str2 <- paste0( "- Ignite damage dealt (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
+          str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
+          str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
+          str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
+                         " - (",
+                         prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE)," + ", prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
+                         ") = ", prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
+          
+          if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
+            ## Vomit trigger
+            str5 <- paste0("<font color=\"#0000FF\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+                           " more than expected. <br> This means VOMIT was present at some point.</b></font>")
+            ## Munch Trigger
+          } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
+            str5 <- paste0("<font color=\"#FF0000\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+                           " less than expected. <br> This means MUNCH was present at some point.</b></font>")
+            ## Expected ignite
+          } else { 
+            str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
+          }
+          str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+          str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+          
+          
+          str_lb_clip <- paste0("- Living Bombs clipped: ", nrow(debuff_table))
+          ## Final format
+          HTML(paste(paste0("<h3> Metrics for ",actor_name,
+                            " on ",fight_name," - ",
+                            sub_spec," ",spec_image,"</h3>"),
+                     paste0("<h4> Ignite Measurement </h4>"),
+                     str5,
+                     str1, str2, 
+                     str3, 
+                     paste0("<b>Result:</b> ",str4),
+                     "<br/",
+                     paste0("<h4> Other Ignite metrics </h4>"),
+                     str2_res,
+                     str_max,
+                     "<br/",
+                     paste0("<h4> Living Bomb metrics </h4>"),
+                     str_lb_clip,
+                     #str_min,
+                     "<br/",
+                     "<br/",
+                     "<br/",
+                     "<br/",
+                     "<br/",
+                     "<br/",
+                     paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
+                     sep = '<br/>'))
+          
+        })
+        
+        
+      } else {
+        
+        showModal(modalDialog(
+          title = "Error",
+          paste0("It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
+          easyClose = TRUE,
+          footer = tagList(
+            modalButton("OK")
+          )
+        ))
+        
+        
       }
-      str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
-      str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
       
-      
-      HTML(paste(paste0("<h3> Ignite Metrics for ",input$fight," and ",input$character,"</h3>"),
-                 str1, str2, 
-                 "<br/>",
-                 str3, 
-                 paste0("<b>Result</b>"),
-                 str4,
-                 str5,
-                 "<br/",
-                 paste0("<h4> Other Ignite metrics </h4>"),
-                 str2_res,
-                 str_max,
-               #str_min,
-                 
-                 sep = '<br/>'))
-      
-    })
-    
-    } else {
+    } else if(spec!="No Spec"){
       
       showModal(modalDialog(
         title = "Error",
@@ -532,7 +629,16 @@ server <- function(input, output,session) {
         )
       ))
       
-
+      
+    } else { 
+      showModal(modalDialog(
+        title = "Error",
+        paste0("It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("OK")
+        )
+      ))
     }
     
     observeEvent(input$debug_id, {
@@ -555,7 +661,7 @@ server <- function(input, output,session) {
     
   })
   
-
+  
   
   
 }

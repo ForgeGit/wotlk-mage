@@ -450,7 +450,7 @@ server <- function(input, output,session) {
                  encounterID = case_when(encounterID == '757' ~ 'Algalon',
                                          encounterID == '752' ~ 'Thorim',
                                          encounterID == '755' ~ 'Vezax',
-                                         encounterID == '746'  ~ 'Razosrcale',
+                                         encounterID == '746'  ~ 'Razorscale',
                                          encounterID == '750'  ~ 'Auriaya',
                                          encounterID == '749'  ~ 'Kologarn',
                                          encounterID == '745'  ~ 'Ignis',
@@ -632,8 +632,12 @@ server <- function(input, output,session) {
           str_delay_1 <- paste0("- Avg. Delay: ", mean(casts$delay,na.rm=T)," ms")
           str_delay_2 <- paste0("- Max. Delay: ", max(casts$delay,na.rm=T), " ms")
           str_delay_3 <- paste0("- Min Delay: ", min(casts$delay,na.rm=T) , " ms")
-          str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts))
           
+          str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts))
+          str_delay_5 <- paste0("- Delays at 0ms: ", 
+                                nrow(casts %>% filter(delay == 0)), " ||| Delays at >0ms and <100ms: ",
+                                nrow(casts %>% filter(delay > 0 & delay < 100)))
+
           ## Final format
           HTML(paste(paste0("<h3> Metrics for ",actor_name,
                             " on ",fight_name," - ",
@@ -656,7 +660,9 @@ server <- function(input, output,session) {
                      "<br/",
                      paste0("<h4> Work-in-progress (On-going testing)</h4>"),
                      paste0("Milliseconds (ms) between Fireball and Pyroblast casts (<750ms):"),
-                     str_delay_4,str_delay_1,
+                     str_delay_4,str_delay_5,
+                     "<br/",
+                     str_delay_1,
                      str_delay_2,str_delay_3,
                      #str_min,
                      "<br/",

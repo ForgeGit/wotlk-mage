@@ -502,19 +502,27 @@ server <- function(input, output,session) {
 
     
     output$summary <- renderUI({
-
+      
       Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
-        
+      
       str1 <- paste0( "- Expected ignite damage (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
       str2 <- paste0( "- Ignite damage dealt (before partial resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
       str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
-      str3 <- paste0("- Ignite lost to (target) death: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
-      str4 <- paste0( "- Estimated difference: ",  prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
+      str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
+      str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
+                     " - (",
+                     prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE)," + ", prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
+                     ") = ", prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
+      
       if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
-        str5 <- paste0("<font color=\"#0000FF\"><b>You dealt more ignite damage than expected. This means VOMIT was present in some of your casts.</b></font>")
+        ## Vomit trigger
+        str5 <- paste0("<font color=\"#0000FF\"><b>",input$character," dealt ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+                       " more ignite damage than expected. <br> This means VOMIT was present at some point.</b></font>")
+        ## Munch Trigger
       } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
-        str5 <- paste0("<font color=\"#FF0000\"><b>You dealt less ignite damage than expected. This means MUNCH was present in some of your casts.</b></font>")
-        
+        str5 <- paste0("<font color=\"#FF0000\"><b>",input$character," dealt ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+                       " less ignite damage than expected. <br> This means MUNCH was present at some point.</b></font>")
+        ## Expected ignite
       } else { 
         str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
       }
@@ -522,19 +530,24 @@ server <- function(input, output,session) {
       str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
       
       
-      HTML(paste(paste0("<h3> Ignite Metrics for ",input$character," on ",input$fight,"</h3>"),
-                 str1, str2, 
-                 "<br/>",
-                 str3, 
-                 paste0("<b>Result</b>"),
-                 str4,
+      HTML(paste(paste0("<h3> Metrics for ",input$character," on ",input$fight,"</h3>"),
+                 paste0("<h4> Ignite Measurement </h4>"),
                  str5,
+                 str1, str2, 
+                 str3, 
+                 paste0("<b>Result:</b> ",str4),
                  "<br/",
                  paste0("<h4> Other Ignite metrics </h4>"),
                  str2_res,
                  str_max,
-               #str_min,
-                 
+                 #str_min,
+                 "<br/",
+                 "<br/",
+                 "<br/",
+                 "<br/",
+                 "<br/",
+                 "<br/",
+                 paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
                  sep = '<br/>'))
       
     })

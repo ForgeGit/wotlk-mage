@@ -477,6 +477,8 @@ server <- function(input, output,session) {
       
     } else{spec <- "No Spec"}
     
+    spec_main <- spec
+    
     spec <- spec %>% mutate(   
       spec = ifelse(arcane_tree>fire_tree & arcane_tree>frost_tree,"Arcane",
                     ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
@@ -486,7 +488,7 @@ server <- function(input, output,session) {
     if(spec=="Fire"){
       
       ## Sub-spec detection
-      sub_spec <- ifelse(arcane_tree>frost_tree,"TTW",ifelse(frost_tree>arcane_tree,"FFB","Error - Contact Forge#0001"))
+      sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],"TTW",ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB","Error - Contact Forge#0001"))
       
       ### Damage and casts extraction
       request <- sprintf(request_damage,as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
@@ -503,7 +505,7 @@ server <- function(input, output,session) {
         ignite_summary()
       
       
-      
+      ## Render output
       
       output$summary <- renderUI({
         
@@ -534,7 +536,8 @@ server <- function(input, output,session) {
         str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
         
         
-        HTML(paste(paste0("<h3> Metrics for ",input$character," on ",input$fight,"</h3>"),
+        ## Final format
+        HTML(paste(paste0("<h3> Metrics for ",input$character," on ",input$fight," - ",sub_spec,"</h3>"),
                    paste0("<h4> Ignite Measurement </h4>"),
                    str5,
                    str1, str2, 

@@ -389,30 +389,47 @@ server <- function(input, output,session) {
       # retrieve list of fights
       request <- sprintf(request_fights, as.character(extract_log_id(as.character(input$log_id))))
       request <- WCL_API2_request(request)
-      fights <- request$data$reportData$report$fights 
-      fights <- fights %>% 
-        filter(encounterID%in% boss_list) %>% 
+      fights <- request$data$reportData$report$fights
+      
+      if(length(fights)!=0){
         
-        mutate(encounterID = as.character(encounterID),
-               
-               encounterID = case_when(encounterID == '757' ~ 'Algalon',
-                                       encounterID == '752' ~ 'Thorim',
-                                       encounterID == '755' ~ 'Vezax',
-                                       encounterID == '746'  ~ 'Razosrcale',
-                                       encounterID == '750'  ~ 'Auriaya',
-                                       encounterID == '749'  ~ 'Kologarn',
-                                       encounterID == '745'  ~ 'Ignis',
-                                       encounterID == '751'  ~ 'Hodir',
-                                       TRUE ~ encounterID),
-               
-               encounterID = ifelse(kill==0, 
-                                    paste0(encounterID, " (Fight:",id,") - Wipe"), 
-                                    paste0(encounterID, " (Fight:",id,") - Kill")
-               )
-        )
-      
-      updateSelectInput(session, "fight", choices = fights$encounterID)
-      
+        fights <- fights %>% 
+          filter(encounterID%in% boss_list) %>% 
+          
+          mutate(encounterID = as.character(encounterID),
+                 
+                 encounterID = case_when(encounterID == '757' ~ 'Algalon',
+                                         encounterID == '752' ~ 'Thorim',
+                                         encounterID == '755' ~ 'Vezax',
+                                         encounterID == '746'  ~ 'Razosrcale',
+                                         encounterID == '750'  ~ 'Auriaya',
+                                         encounterID == '749'  ~ 'Kologarn',
+                                         encounterID == '745'  ~ 'Ignis',
+                                         encounterID == '751'  ~ 'Hodir',
+                                         TRUE ~ encounterID),
+                 
+                 encounterID = ifelse(kill==0, 
+                                      paste0(encounterID, " (Fight:",id," - Wipe)"), 
+                                      paste0(encounterID, " (Fight:",id," - Kill)")
+                 )
+          )
+        
+        updateSelectInput(session, "fight", choices = fights$encounterID)
+        
+      } else {
+        
+        showModal(modalDialog(
+          title = "Error #2",
+          "It looks like the log you just linked does not have valid fights for analysis, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing.",
+          easyClose = TRUE,
+          footer = tagList(
+            modalButton("OK")
+          )
+        ))
+        
+        
+      }
+      ## No mages?
       
     } else {   
       
@@ -423,7 +440,7 @@ server <- function(input, output,session) {
       # }) 
       
       showModal(modalDialog(
-        title = "Error",
+        title = "Error #1",
         "It looks like the log you just linked does not exist, has no mages, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing",
         easyClose = TRUE,
         footer = tagList(
@@ -505,7 +522,7 @@ server <- function(input, output,session) {
       str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
       
       
-      HTML(paste(paste0("<h3> Ignite Metrics for ",input$fight," and ",input$character,"</h3>"),
+      HTML(paste(paste0("<h3> Ignite Metrics for ",input$character," on ",input$fight,"</h3>"),
                  str1, str2, 
                  "<br/>",
                  str3, 

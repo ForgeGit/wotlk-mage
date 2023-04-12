@@ -6,7 +6,7 @@ library(tidyr)
 library(readr)
 library(DT)
 
-source("./helpers.R")
+#source("./helpers.R")
 
 port <- Sys.getenv('PORT')
 

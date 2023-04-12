@@ -55,7 +55,7 @@ ui <- fluidPage(
       br(),
       "Consider a donation:",
       br(),
-      tags$a(href= "https://ko-fi.com/forge", "Buy me a coffe! (and help me pay for the app hosting)"),
+      tags$a(href= "https://ko-fi.com/forge", "Buy me a covfefe! (and help me pay for the app hosting)"),
       br(),
       br(),
       tags$a(href= "https://github.com/ForgeGit/ignite_wotlk", "FAQ: Munching? Vomit? What?")

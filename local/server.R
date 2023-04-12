@@ -119,6 +119,28 @@ request_spec <-'{
 }'
 
 
+request_debuff<-'{
+    reportData {
+        report(code: "%s") {
+            events(
+                dataType: Debuffs
+                startTime: 0
+                endTime: 999999999999
+                fightIDs: %i
+                sourceID: %i
+                targetID: %i
+                hostilityType: Enemies
+                includeResources: true
+                
+            ) {
+                data
+                nextPageTimestamp
+            }
+        }
+    }
+}'
+
+
 spell_filter <- c(1,60488,5019,# necromatic power and misc shoot 
                   55039,# Gnomish Lightning Generator
                   49909, #icy touch
@@ -460,7 +482,8 @@ server <- function(input, output,session) {
     
     actor_temp <- parse_number(input$character)
     fight_temp <- parse_number(input$fight)
-    
+    fight_name <- input$fight
+    actor_name <- input$character
     ### Spec detection
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
@@ -510,6 +533,15 @@ server <- function(input, output,session) {
         ignite_table <- ignite_table_debug %>%
           ignite_summary()
         
+        ### Debuff LB extraction
+        request <- sprintf(request_debuff, 
+                           as.character(extract_log_id(as.character(input$log_id))), 
+                           as.numeric(fight_temp), max(ignite_table_debug$targetID,na.rm=T), as.numeric(actor_temp))
+        request <- WCL_API2_request(request)
+        debuff_table <- request$data$reportData$report$events$data
+        debuff_table <- debuff_table %>% 
+          filter(abilityGameID ==55360 & 
+                   type == "refreshdebuff")
         
         ## Render output
         
@@ -541,9 +573,11 @@ server <- function(input, output,session) {
           str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           
+          
+          str_lb_clip <- paste0("- Living Bombs clipped: ", nrow(debuff_table))
           ## Final format
-          HTML(paste(paste0("<h3> Metrics for ",input$character,
-                            " on ",input$fight," - ",
+          HTML(paste(paste0("<h3> Metrics for ",actor_name,
+                            " on ",fight_name," - ",
                             sub_spec," ",spec_image,"</h3>"),
                      paste0("<h4> Ignite Measurement </h4>"),
                      str5,
@@ -554,6 +588,9 @@ server <- function(input, output,session) {
                      paste0("<h4> Other Ignite metrics </h4>"),
                      str2_res,
                      str_max,
+                     "<br/",
+                     paste0("<h4> Living Bomb metrics </h4>"),
+                     str_lb_clip,
                      #str_min,
                      "<br/",
                      "<br/",

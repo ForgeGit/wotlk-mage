@@ -1,6 +1,6 @@
 ui <- fluidPage(
   
-  titlePanel(paste0(("Ignite Analyzer - BETA"))),
+  titlePanel(paste0(("WOTLK Mage Analyzer - BETA"))),
   
   sidebarLayout(
     sidebarPanel(

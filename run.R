@@ -5,7 +5,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(DT)
-library(shinytheme)
+library(shinythemes)
 #source("./helpers.R")
 
 port <- Sys.getenv('PORT')

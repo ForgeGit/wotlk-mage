@@ -13,7 +13,7 @@ ui <- fluidPage(
   tags$head(
     tags$script(
       type = "text/javascript",
-      src = "https://www.googletagmanager.com/gtag/js?id=G-KRGDEQXXLK"
+      src = "https://www.googletagmanager.com/gtag/js?id=G-WPSQCXFWF5"
     ),
     tags$script(
       type = "text/javascript",
@@ -21,7 +21,7 @@ ui <- fluidPage(
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-KRGDEQXXLK');
+      gtag('config', 'G-WPSQCXFWF5');
       "
     )
   ),

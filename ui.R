@@ -1,5 +1,5 @@
 ui <- fluidPage(
-  tags$head(tags$link(rel="shortcut icon", href="https://raw.githubusercontent.com/ForgeGit/wotlk-mage/main/local/ourignite2.ico")),
+  tags$head(tags$link(rel="shortcut icon", href="https://cdn.discordapp.com/attachments/1091572489009758309/1096172475550810183/ourignite2.ico")),
   
   tags$style(HTML("
     h4, .h4 {

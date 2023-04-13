@@ -1,5 +1,5 @@
 
-my_packages = c("jsonlite", "httr","dplyr","tidyr","readr","DT","shinytheme")
+my_packages = c("jsonlite", "httr","dplyr","tidyr","readr","DT","shinythemes")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {

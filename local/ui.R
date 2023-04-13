@@ -9,6 +9,22 @@ ui <- fluidPage(
     }
   ")),
   
+  tags$head(
+    tags$script(
+      type = "text/javascript",
+      src = "https://www.googletagmanager.com/gtag/js?id=G-KRGDEQXXLK"
+    ),
+    tags$script(
+      type = "text/javascript",
+      paste0("
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '",Sys.getenv("GOOGLE_ANALYTICS"),"');
+    "
+    )
+  ),
+  
   titlePanel(title=div(img(src="https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg"), "WOTLK Mage Analyzer - BETA"),
              windowTitle="WOTLK Mage Analyzer"),
   

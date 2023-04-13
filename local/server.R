@@ -7,10 +7,21 @@ boss_list <- c(757, #Alga
                750, #Auriaya
                749, #Kologarn
                745, #Ignis
-               751 #Hodir
+               751, #Hodir
+               753
 ) 
 
-
+npc_exclusions <- c("Hodir's Fury",
+                    "Champion of Hodir",
+                    "Razorscale Spawner",
+                    "Razorscale Harpoon Fire State",
+                    "Razorscale Controller",
+                    "Algalon Stalker Asteroid Target 02",
+                    "Rubble Stalker Kologarn",
+                    "Auriaya Feral Defender Stalker",
+                    "Thorim's Hammer",
+                    "Thorim Event Bunny",
+                    "Freya's Ward")
 #########################################################################################
 url <- "https://classic.warcraftlogs.com/api/v2"
 
@@ -35,12 +46,36 @@ WCL_API2_request <- function(request) {
   
   return(response_formated)
 }
-#########################################################################################
-request_mage <-'{
+
+######### Errors ##########
+
+error1 <-"It looks like the log you just linked does not exist, has no mages, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing"
+error2 <-"It looks like the log you just linked does not have valid fights for analysis, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing."
+
+error_diag <-function(x,y) {
+  
+  x <- modalDialog(
+    title = paste0("Error #",y),
+    x,
+    easyClose = TRUE,
+    footer = tagList(
+      modalButton("OK")
+    )
+  )
+  
+  return(x)
+  
+}
+
+
+
+######### Requests ##########
+
+request_actors <-'{
     reportData {
         report(code: "%s") {
             masterData(translate: true) {
-                actors(type: "player"){
+                actors{
           
                 gameID
                 id
@@ -57,7 +92,7 @@ request_mage <-'{
 request_fights <-'{
     reportData {
         report(code: "%s") {
-            fights(killType: Encounters){
+            fights(killType: All){
             encounterID
             difficulty
             hardModeLevel
@@ -77,16 +112,11 @@ request_fights <-'{
     }'
 
 
-
-
-
 request_damage <-'{
     reportData {
         report(code: "%s") {
             events(dataType:DamageDone
-            killType:Encounters
             hostilityType:Friendlies
-            sourceClass:"Mage"
             sourceID:%i
             fightIDs:%i
             startTime: 0
@@ -398,12 +428,12 @@ extract_log_id <- function(log_input) {
 }
 
 
-#########################################################################################
 
+############################### SERVER ############################### 
 
 server <- function(input, output,session) {
-  actors <- NULL
-  fights <- NULL
+
+  ### Style settings ####
   
   tags$style(HTML("
     h4, .h4 {
@@ -412,111 +442,184 @@ server <- function(input, output,session) {
     }
   "))
   
-  # retrieve list of mages
-  observeEvent(input$submit_log_id, {
+  ### Actors list ####
+  
+  actors <-eventReactive(input$submit_log_id, {
     
-    request <- sprintf(request_mage, as.character(extract_log_id(as.character(input$log_id))))
-    request <- WCL_API2_request(request)
-    actors <- request$data$reportData$report$masterData$actors 
+    actors<-WCL_API2_request(
+      sprintf(
+        request_actors, # Request 
+        as.character(extract_log_id(as.character(input$log_id))) # log ID
+      )
+    )$data$reportData$report$masterData$actors
     
-    if(length(actors)!=0){
-      
-      actors <- actors %>% 
-        filter(subType=="Mage") %>% 
-        mutate(name = paste0(name, " (ID:",id,")"))
-      
-      
-      updateSelectInput(session, "character", choices = actors$name)
-      
-      #        output$table <- renderDataTable({
-      #         
-      #       datatable(actors)
-      #        
-      #    })
-      
-      
-      # retrieve list of fights
-      request <- sprintf(request_fights, as.character(extract_log_id(as.character(input$log_id))))
-      request <- WCL_API2_request(request)
-      fights <- request$data$reportData$report$fights
-      
-      if(length(fights)!=0){
-        
-        fights <- fights %>% 
-          filter(encounterID%in% boss_list) %>% 
-          
-          mutate(encounterID = as.character(encounterID),
-                 
-                 encounterID = case_when(encounterID == '757' ~ 'Algalon',
-                                         encounterID == '752' ~ 'Thorim',
-                                         encounterID == '755' ~ 'Vezax',
-                                         encounterID == '746'  ~ 'Razorscale',
-                                         encounterID == '750'  ~ 'Auriaya',
-                                         encounterID == '749'  ~ 'Kologarn',
-                                         encounterID == '745'  ~ 'Ignis',
-                                         encounterID == '751'  ~ 'Hodir',
-                                         TRUE ~ encounterID),
-                 
-                 encounterID = ifelse(kill==0, 
-                                      paste0(encounterID, " (Fight:",id," - Wipe)"), 
-                                      paste0(encounterID, " (Fight:",id," - Kill)")
-                 )
-          )
-        
-        updateSelectInput(session, "fight", choices = fights$encounterID)
-        
-      } else {
-        
-        showModal(modalDialog(
-          title = "Error #2",
-          "It looks like the log you just linked does not have valid fights for analysis, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing.",
-          easyClose = TRUE,
-          footer = tagList(
-            modalButton("OK")
-          )
-        ))
-        
-        
-      }
-      ## No mages?
-      
-    } else {   
-      
-      # output$table <- renderDataTable({
-      #   
-      #   data.frame(A=c("ERROR"),B=c("ERROR"), C=c("Hi! Yes, This is incomplete"))
-      #   
-      # }) 
-      
-      showModal(modalDialog(
-        title = "Error #1",
-        "It looks like the log you just linked does not exist, has no mages, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing",
-        easyClose = TRUE,
-        footer = tagList(
-          modalButton("OK")
-        )
-      ))
-      
-      updateSelectInput(session, "character", choices = NULL)
+    if(!is.null(actors)){
+      actors %>% 
+        filter(subType %in% c("NPC","Boss","Mage","Unknown")) # Exclude unnecesary classes/pets
+    }else{
+      "NO DATA"
     }
-    
-    
     
   })
   
+  ### Fights list ####
+  
+  fights <-eventReactive(input$submit_log_id, {
+    
+    fights<-WCL_API2_request(
+      sprintf(
+        request_fights, # Request 
+        as.character(extract_log_id(as.character(input$log_id))) # log ID
+      )
+    )$data$reportData$report$fights
+    
+    if(!is.null(fights)){
+    
+    ### DR. Boom logic
+    if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+      fights
+    } else if(max(fights$encounterID)>0) {
+      
+      fights %>% 
+        filter(encounterID!=0) %>% 
+        
+        filter(encounterID %in% boss_list) %>% 
+        
+        mutate(encounterID_2 = as.character(encounterID),
+               
+               encounterID_2 = case_when(encounterID_2 == '757' ~ 'Algalon',
+                                         encounterID_2 == '752' ~ 'Thorim',
+                                         encounterID_2 == '755' ~ 'Vezax',
+                                         encounterID_2 == '746'  ~ 'Razorscale',
+                                       encounterID_2 == '750'  ~ 'Auriaya',
+                                       encounterID_2 == '749'  ~ 'Kologarn',
+                                       encounterID_2 == '745'  ~ 'Ignis',
+                                       encounterID_2 == '751'  ~ 'Hodir',
+                                       encounterID_2 == '753'  ~ 'Freya',
+                                       
+                                       TRUE ~ encounterID_2),
+               
+               encounterID_2 = ifelse(kill==0, 
+                                    paste0(encounterID_2, " (Fight:",id," - Wipe)"), 
+                                    paste0(encounterID_2, " (Fight:",id," - Kill)")
+               )
+        )
+      
+    }else{
+      "NO DATA"
+    }
+        
+    }else{
+      "NO DATA"
+    }
+    
+  })
+  
+  ### Actors list update ####
+  
+  observeEvent(input$submit_log_id, {
+    
+    ### Actor update ###
+    if(is.data.frame(actors())==TRUE){
+      
+      mages <- actors() %>% 
+        filter(subType=="Mage") %>% 
+        mutate(name = paste0(name, " (ID:",id,")"))
+      
+      if(nrow(mages)>0){
+        
+        updateSelectInput(session, "character", choices = mages$name)
+      
+        ### DR. Boom logic
+        
+      } else if(any(actors()$name %in% c("Dr. Boom"))==TRUE) {
+        
+        updateSelectInput(session, "character", choices = actors()$name)
+        
+      } else {
+        showModal(error_diag(error1,1))
+        updateSelectInput(session, "character", choices = "NO MAGES")
+      }
+      
+    } else if(is.data.frame(actors())==FALSE) {
+      
+      showModal(error_diag(error1,1))
+      updateSelectInput(session, "character", choices = actors())
+    }
+    
+    
+    ### Fight Update ###
+    if(is.data.frame(fights())==TRUE){
+      
+      if(max(fights()$encounterID)>0){
+        
+        updateSelectInput(session, "fight", choices = fights()$encounterID_2)
+      
+      } else if(any(actors()$name %in% c("Dr. Boom"))==TRUE){  
+        
+        updateSelectInput(session, "fight", choices = fights()$startTime)
+        
+      } else if(actors()!="NO DATA"){
+        
+        showModal(error_diag(error2,2))
+        updateSelectInput(session, "fight", choices = "NO BOSS FIGHTS")
+        
+      }else {
+        
+        updateSelectInput(session, "fight", choices = "NO BOSS FIGHTS")
+      }
+      
+    } else if(is.data.frame(fights())==FALSE & actors()!="NO DATA") {
+      
+      showModal(error_diag(error2,2))
+      updateSelectInput(session, "fight", choices = fights())
+    }
+    
+  })
+
+
   # retrieve data and estimations
   observeEvent(input$submit_char_id, {
-    
-    actor_temp <- parse_number(input$character)
-    fight_temp <- parse_number(input$fight)
+
     fight_name <- input$fight
+    
+    if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+      
+      fight_temp<- fights() %>% 
+        filter(startTime==as.numeric(fight_name)) %>% 
+        select(id)
+      
+      fight_temp <- fight_temp$id[1]
+      
+    }else {
+      fight_temp <- parse_number(input$fight)
+    }
+
+    
     actor_name <- input$character
+    
+    if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+      
+      actor_temp<- actors() %>% 
+        filter(name==actor_name) %>% 
+        select(id)
+      
+      actor_temp <- actor_temp$id[1]
+      
+    }else {
+    actor_temp <- parse_number(input$character)
+    }
+    
+    
     ### Spec detection
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
-    request <- sprintf(request_spec, as.character(extract_log_id(as.character(input$log_id))),as.numeric(fight_temp), as.numeric(actor_temp))
-    request <- WCL_API2_request(request)
-    request <- request$data$reportData$report$events$data
+    request <- WCL_API2_request(
+      sprintf(request_spec, 
+              as.character(extract_log_id(as.character(input$log_id))), # Log ID
+              as.numeric(fight_temp),  # Fight ID
+              as.numeric(actor_temp))  # Actor ID
+    )$data$reportData$report$events$data
     
     if(length(request)!=0){
       request <-  request[[32]][[1]][[1]]
@@ -535,28 +638,49 @@ server <- function(input, output,session) {
       
     } else{spec <- "No Spec"}
     
-    
-    
-    if(spec=="Fire"){
+    if(spec=="Fire" |  any(actors()$name %in% c("Dr. Boom"))==TRUE ){
+      
+      if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+        fight_name="Dr. Boom"}
+      
+      ## Targets detection
+      targetID_code <- actors() %>%
+        filter(
+          grepl(
+            paste0("\\b(", 
+                   paste(
+                     sub("(\\w+).*", "\\1", 
+                         fight_name),
+                     collapse = "|"), ")\\b"),
+            name,
+            ignore.case = TRUE)
+        ) %>% 
+        filter(subType!="Unknown" & !(name %in% npc_exclusions)) %>%
+        select(id,name) 
       
       ## Sub-spec detection
+      if(spec!="No Spec"){
       sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],"TTW",ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB","Error - Contact Forge#0001"))
       spec_image <- ifelse(sub_spec=="TTW",
                            "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_flamebolt.jpg' height='25' width='25'/>",
                            ifelse(sub_spec=="FFB","<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
                                   "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
+      } else {
+        sub_spec <- spec   
+        spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
+        }
       ### Damage and casts extraction
       request <- sprintf(request_damage,
-                         as.character(extract_log_id(as.character(input$log_id))), as.numeric(actor_temp), as.numeric(fight_temp))
+                         as.character(extract_log_id(as.character(input$log_id))), 
+                         as.numeric(actor_temp), 
+                         as.numeric(fight_temp))
       request <- WCL_API2_request(request)
       request <- request$data$reportData$report$events$data
       if(length(request)!=0){
         
-        
         ignite_table_debug <- request %>% 
-          ignite_cleaning() %>% ungroup() %>%
-          add_count(targetID) %>%
-          filter(n==max(n)) 
+          filter(targetID==as.numeric(targetID_code$id[1])) %>%
+          ignite_cleaning()
         
         ignite_table <- ignite_table_debug %>%
           ignite_summary()
@@ -564,7 +688,9 @@ server <- function(input, output,session) {
         ### Debuff LB extraction
         request <- sprintf(request_debuff, 
                            as.character(extract_log_id(as.character(input$log_id))), 
-                           as.numeric(fight_temp), max(ignite_table_debug$targetID,na.rm=T), as.numeric(actor_temp))
+                           as.numeric(fight_temp), 
+                           as.numeric(targetID_code$id[1]), 
+                           as.numeric(actor_temp))
         request <- WCL_API2_request(request)
         debuff_table <- request$data$reportData$report$events$data
         debuff_table <- debuff_table %>% 
@@ -574,7 +700,8 @@ server <- function(input, output,session) {
         ### Cast gaps extraction
         request <- sprintf(request_cast, 
                             as.character(extract_log_id(as.character(input$log_id))), 
-                            as.numeric(fight_temp), as.numeric(actor_temp), max(ignite_table_debug$targetID,na.rm=T))
+                            as.numeric(fight_temp), as.numeric(actor_temp), 
+                           as.numeric(targetID_code$id[1]))
         request <- WCL_API2_request(request)
         
         casts <- request$data$reportData$report$events$data%>% 
@@ -603,7 +730,7 @@ server <- function(input, output,session) {
           
           if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
             ## Vomit trigger
-            str5 <- paste0("<font color=\"#54A5BE\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+            str5 <- paste0("<font color=\"#61B661\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
                            " more than expected. <br> This means VOMIT was present at some point.</b></font>")
             ## Munch Trigger
           } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
@@ -611,7 +738,7 @@ server <- function(input, output,session) {
                            " less than expected. <br> This means MUNCH was present at some point.</b></font>")
             ## Expected ignite
           } else { 
-            str5 <- paste0("<font color=\"#61B661\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
+            str5 <- paste0("<font color=\"#54A5BE\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
           }
           
           ### Ignite ###
@@ -678,8 +805,8 @@ server <- function(input, output,session) {
       } else {
         
         showModal(modalDialog(
-          title = "Error",
-          paste0("It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
+          title = "Error 2",
+          paste0("It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing",fight_temp,actor_temp),
           easyClose = TRUE,
           footer = tagList(
             modalButton("OK")
@@ -692,7 +819,7 @@ server <- function(input, output,session) {
     } else if(spec!="No Spec"){
       
       showModal(modalDialog(
-        title = "Error",
+        title = "Error 3",
         paste0("It looks like that character is ",spec," Mage on that log. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
         easyClose = TRUE,
         footer = tagList(
@@ -703,7 +830,7 @@ server <- function(input, output,session) {
       
     } else { 
       showModal(modalDialog(
-        title = "Error",
+        title = "Error 4",
         paste0("It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
         easyClose = TRUE,
         footer = tagList(
@@ -718,7 +845,7 @@ server <- function(input, output,session) {
       output$table2 <- renderDataTable({
         
         ignite_table_debug %>% 
-          select(-c(hitType, n, munched_temp)) %>%
+          select(-c(hitType, munched_temp)) %>%
           rename(Ignite_Chunk=IGNITE_END ,
                  time=timestamp,
                  ability = abilityGameID,

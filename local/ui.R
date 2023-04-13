@@ -1,5 +1,5 @@
 ui <- fluidPage(
-  tags$head(tags$link(rel="shortcut icon", href="https://raw.githubusercontent.com/ForgeGit/wotlk-mage/main/local/ourignite.ico")),
+  tags$head(tags$link(rel="shortcut icon", href="https://raw.githubusercontent.com/ForgeGit/wotlk-mage/main/local/ourignite2.ico")),
   
   tags$style(HTML("
     h4, .h4 {
@@ -55,6 +55,11 @@ ui <- fluidPage(
       table.dataTable tbody tr:nth-child(even) {
         background-color: #f2f2f2;
       }
+      
+      table.dataTable tbody tr:nth-child(odd) {
+        background-color: #f7f7f7;
+            }
+      
       table.dataTable thead th {
         background-color: white;
          color: black;
@@ -93,23 +98,25 @@ ui <- fluidPage(
     sidebarPanel(
       "Instructions:",
       br(),
-      "1.- Enter your log, press ENTER",
+      "1.- Type in your log, then hit the READ button",
       br(),
       "2.- Select a mage and boss fight, press ESTIMATE",
       br(),
       "3.- Repeat step 2 for each fight/mage",
       br(),
+      "Notes:",
+      br(),
       "- If you do not interact with the app for an extended period, it may temporarily 'grey out.' If this occurs, please refresh the page. If the app crashes after pressing a button, please refresh the page and try again or contact me.",
       br(),
       "- The app currently supports only a limited number of bosses",
       br(),
-      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale)",
+      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale. Partially Freya)",
       br(),
       br(),
       # input for log ID
       textInput("log_id", "Enter Log ID:"),
       
-      actionButton("submit_log_id","ENTER log and load data",icon("refresh")),
+      actionButton("submit_log_id","READ log",icon("refresh")),
       # input for character selection
       selectInput("character", "Select Character:", choices = NULL),
       # input for fight selection

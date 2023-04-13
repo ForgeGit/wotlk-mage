@@ -26,7 +26,14 @@ ui <- fluidPage(
   ),
   
   # https://bootswatch.com/slate/
-  theme = shinytheme("slate"),
+ # theme = shinytheme("slate"),
+ tags$head(
+   tags$link(
+     rel = "stylesheet",
+     type = "text/css",
+     href = "https://bootswatch.com/4/slate/bootstrap.min.css"
+   )
+ ),
   tags$head(tags$style(HTML(
     "
                   .dataTables_length label,

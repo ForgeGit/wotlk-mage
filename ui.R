@@ -52,6 +52,14 @@ ui <- fluidPage(
                       color: #333333;
                   }
                   
+      table.dataTable tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      table.dataTable thead th {
+        background-color: white;
+         color: black;
+      }
+                  
 .btn-default.action-button.shiny-bound-input {
   background-color: #4169E1;
   border-color: #000000;

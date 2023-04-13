@@ -1,5 +1,4 @@
 ui <- fluidPage(
-  
   tags$head(tags$link(rel="shortcut icon", href="https://raw.githubusercontent.com/ForgeGit/wotlk-mage/main/local/ourignite.ico")),
   
   tags$style(HTML("
@@ -26,7 +25,58 @@ ui <- fluidPage(
     )
   ),
   
-  
+  # https://bootswatch.com/slate/
+  theme = shinytheme("slate"),
+  tags$head(tags$style(HTML(
+    "
+                  .dataTables_length label,
+                  .dataTables_filter label,
+                  .dataTables_info {
+                      color: white!important;
+                      }
+
+                  .paginate_button {
+                      background: white!important;
+                  }
+
+                  thead {
+                      color: white;
+                  }
+                  
+                  a {
+                      color: #ffcc00!important;
+                  }    
+                      
+                  input[type=text] {
+                      background-color: #f5f5f5;
+                      color: #333333;
+                  }
+                  
+.btn-default.action-button.shiny-bound-input {
+  background-color: #4169E1;
+  border-color: #000000;
+  color: #F5F5F5;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-default.action-button.shiny-bound-input:active {
+  background-color: #354C7E;
+  border-color: #363636;
+  color: #7a7376;
+}
+
+                  "))),
+  tags$head(tags$script(HTML(
+    '
+    $(document).on("click", ".btn-default.action-button.shiny-bound-input", function() {
+      var $btn = $(this);
+      $btn.addClass("active");
+      setTimeout(function() {
+        $btn.removeClass("active");
+      }, 100);
+    });
+    '
+  ))),
   
   titlePanel(title=div(img(src="https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg"), "WOTLK Mage Analyzer - BETA"),
              windowTitle="WOTLK Mage Analyzer"),

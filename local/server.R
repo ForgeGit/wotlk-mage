@@ -603,15 +603,15 @@ server <- function(input, output,session) {
           
           if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
             ## Vomit trigger
-            str5 <- paste0("<font color=\"#0000FF\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+            str5 <- paste0("<font color=\"#54A5BE\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
                            " more than expected. <br> This means VOMIT was present at some point.</b></font>")
             ## Munch Trigger
           } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
-            str5 <- paste0("<font color=\"#FF0000\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
+            str5 <- paste0("<font color=\"#BE5350\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
                            " less than expected. <br> This means MUNCH was present at some point.</b></font>")
             ## Expected ignite
           } else { 
-            str5 <- paste0("<font color=\"#5A5A5A\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
+            str5 <- paste0("<font color=\"#61B661\"><b>You dealt the expected ignite damage. No munch or vomit.</b></font>")  
           }
           
           ### Ignite ###

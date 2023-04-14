@@ -432,7 +432,22 @@ extract_log_id <- function(log_input) {
 ############################### SERVER ############################### 
 
 server <- function(input, output,session) {
-
+  app_url <- "https://your-app.herokuapp.com"  # Replace with your app's URL
+  num_pings <- 3  # Number of times to ping the app
+  ping_interval <- 40  # Time in seconds between each ping
+  ping_app <- function() {
+    for (i in 1:num_pings) {
+      GET(app_url)
+      if (i < num_pings) {
+        Sys.sleep(ping_interval)
+      }
+    }
+  }
+  # Ping the app URL every 40 seconds
+  observe({
+    invalidateLater(40000, session)
+    ping_app()
+  })
   ### Style settings ####
   
   tags$style(HTML("

@@ -744,7 +744,23 @@ server <- function(input, output,session) {
                  )%>%
           mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
                                            type=="begincast",
-                                         "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+                                         "Interrupted","OK")) %>% 
+          filter(flag_interrupt=="Interrupted")
+        
+        pyro_hard_cast <- casts %>% 
+          filter(abilityGameID==42891 & 
+                   !(type%in%
+                       c("damage","refreshdebuff",
+                         "applydebuff","removedebuff")) 
+          )%>%
+          mutate(cast_time = ifelse(type=="cast" & 
+                                      lag(type)=="begincast", 
+                                    timestamp-lag(timestamp),
+                                    NA)
+          ) %>% 
+          filter(cast_time>500)
+        
+        
         
         fireball_interrupt <- casts %>% 
           filter(abilityGameID==42833 & 
@@ -943,6 +959,9 @@ server <- function(input, output,session) {
           str_ffb <- paste0("- Frostfire Bolt cancelled: ",nrow(frostfirebolt_interrupt)) 
           fblast_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_fireball.jpg' height='20' width='20'/>"
           
+          
+          str_pyro_hard <- paste0("- Pyroblasts hard-cast: ",nrow(pyro_hard_cast))
+          
           if (sub_spec=="FFB"){
           str_mainspell <- str_ffb} else if(sub_spec=="TTW"){str_mainspell <- str_fb }
         
@@ -951,6 +970,7 @@ server <- function(input, output,session) {
           "<br/",
           paste0(fblast_img,"<h4> <b> Cast Metrics (Encounter-wide, All Targets)</h4> </b>"),
           str_pyro,
+          str_pyro_hard,
           str_mainspell,
           #str_min,
           "<br/",

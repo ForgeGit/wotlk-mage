@@ -729,7 +729,7 @@ server <- function(input, output,session) {
         
         casts_fb_pyro <- casts %>% 
           filter((abilityGameID==42833 | abilityGameID==42891) & 
-                   targetID == as.numeric(targetID_code$id[1])
+                   type=="cast"
                  ) %>%
           select(timestamp,abilityGameID) %>%
           mutate(delay = timestamp-lag(timestamp)) %>%
@@ -818,7 +818,7 @@ server <- function(input, output,session) {
           
           ## Final format
           HTML(paste(
-                     paste0(ignite_img,"<h4> <b> Ignite Measurement (Main Target only) </b> </h4>"),
+                     paste0(ignite_img,"<h4> <b> Ignite Metrics (Main Target only) </b> </h4>"),
                      str5,
                      str1, #Expected ignite damage 
                      str3, # Lost death

@@ -78,6 +78,8 @@ ui <- fluidPage(
   color: #7a7376;
 }
 
+
+
                   "))),
   tags$head(tags$script(HTML(
     '
@@ -143,13 +145,23 @@ ui <- fluidPage(
       br(),
       br(),
       tags$a(href= "https://github.com/ForgeGit/ignite_wotlk", "FAQ: Munching? Vomit? What?")
-     
+      
     ),
     mainPanel(
-      # output for data table
-      #  dataTableOutput("table"),
-      htmlOutput("summary"),
-      dataTableOutput("table2")
+      fluidRow(
+        column(width = 12, uiOutput("summary_header"))
+      ),
+      br(),
+      fluidRow(
+        column(width = 5, uiOutput("summary_ignite")),
+        column(width = 3, uiOutput("summary_ignite2"))
+      ),
+      fluidRow(
+        column(width = 12, uiOutput("everything_else"))
+      ),
+      fluidRow(
+        column(width = 12, dataTableOutput("table2"))
+      )
     )
   )
 )

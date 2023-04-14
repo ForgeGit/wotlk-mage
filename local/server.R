@@ -51,7 +51,7 @@ WCL_API2_request <- function(request) {
 
 error1 <-"It looks like the log you just linked does not exist, has no mages, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing"
 error2 <-"It looks like the log you just linked does not have valid fights for analysis, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing."
-
+error3 <- "It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"
 error_diag <-function(x,y) {
   
   x <- modalDialog(
@@ -117,8 +117,9 @@ request_damage <-'{
         report(code: "%s") {
             events(dataType:DamageDone
             hostilityType:Friendlies
-            sourceID:%i
             fightIDs:%i
+            sourceID:%i
+            targetID:%i
             startTime: 0
             endTime: 999999999999){
               data
@@ -578,9 +579,11 @@ server <- function(input, output,session) {
   })
 
 
-  # retrieve data and estimations
+### Retrieve data and estimations ####
+ 
   observeEvent(input$submit_char_id, {
 
+    ## Fight and Actor IDs
     fight_name <- input$fight
     
     if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
@@ -612,6 +615,7 @@ server <- function(input, output,session) {
     
     
     ### Spec detection
+  
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
     request <- WCL_API2_request(
@@ -638,12 +642,18 @@ server <- function(input, output,session) {
       
     } else{spec <- "No Spec"}
     
+    
+    ## Fire mages only from here onward
+    ## Have to change for frost ignite spec
+  
     if(spec=="Fire" |  any(actors()$name %in% c("Dr. Boom"))==TRUE ){
+      
+      
+      ### Targets detection
       
       if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
         fight_name="Dr. Boom"}
-      
-      ## Targets detection
+
       targetID_code <- actors() %>%
         filter(
           grepl(
@@ -655,27 +665,40 @@ server <- function(input, output,session) {
             name,
             ignore.case = TRUE)
         ) %>% 
-        filter(subType!="Unknown" & !(name %in% npc_exclusions)) %>%
+        filter(subType!="Unknown" & 
+                 !(name %in% ## Names are searched based on "Single Names" - Using "Algalon" will keep "Algalon the Observer".
+                     npc_exclusions)) %>% ## Sometimes, "Hodir" and "Hodir's Wrath" exist. We want the wrath away.
         select(id,name) 
       
       ## Sub-spec detection
       if(spec!="No Spec"){
-      sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],"TTW",ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB","Error - Contact Forge#0001"))
+        
+      sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],
+                         "TTW",
+                         ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB",
+                                "Error - Contact Forge#0001"))
+      
+      ## Image for spec
       spec_image <- ifelse(sub_spec=="TTW",
                            "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_flamebolt.jpg' height='25' width='25'/>",
-                           ifelse(sub_spec=="FFB","<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
+                           ifelse(sub_spec=="FFB",
+                                  "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
                                   "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
       } else {
         sub_spec <- spec   
         spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
         }
       ### Damage and casts extraction
-      request <- sprintf(request_damage,
-                         as.character(extract_log_id(as.character(input$log_id))), 
-                         as.numeric(actor_temp), 
-                         as.numeric(fight_temp))
-      request <- WCL_API2_request(request)
-      request <- request$data$reportData$report$events$data
+
+            request <- WCL_API2_request(sprintf(request_damage,  ## Damage 
+                                          as.character(extract_log_id(as.character(input$log_id))),
+                                          as.numeric(fight_temp), 
+                                          as.numeric(actor_temp), 
+                                          as.numeric(targetID_code$id[1])
+                                          )
+                                        )$data$reportData$report$events$data
+            
+            
       if(length(request)!=0){
         
         ignite_table_debug <- request %>% 
@@ -685,26 +708,26 @@ server <- function(input, output,session) {
         ignite_table <- ignite_table_debug %>%
           ignite_summary()
         
+        
         ### Debuff LB extraction
-        request <- sprintf(request_debuff, 
-                           as.character(extract_log_id(as.character(input$log_id))), 
-                           as.numeric(fight_temp), 
-                           as.numeric(targetID_code$id[1]), 
-                           as.numeric(actor_temp))
-        request <- WCL_API2_request(request)
-        debuff_table <- request$data$reportData$report$events$data
-        debuff_table <- debuff_table %>% 
+        debuff_table <- WCL_API2_request(
+          sprintf(request_debuff, ## Debuffs
+                  as.character(extract_log_id(as.character(input$log_id))),  ## Log
+                  as.numeric(fight_temp), ## Fight ID
+                  as.numeric(targetID_code$id[1]), ## Target as sourceID
+                  as.numeric(actor_temp))## Actor as targetID
+        )$data$reportData$report$events$data %>% 
+          
           filter(abilityGameID ==55360 & 
                    type == "refreshdebuff")
         
         ### Cast gaps extraction
-        request <- sprintf(request_cast, 
-                            as.character(extract_log_id(as.character(input$log_id))), 
-                            as.numeric(fight_temp), as.numeric(actor_temp), 
-                           as.numeric(targetID_code$id[1]))
-        request <- WCL_API2_request(request)
         
-        casts <- request$data$reportData$report$events$data%>% 
+        casts <- WCL_API2_request(sprintf(request_cast, 
+                                            as.character(extract_log_id(as.character(input$log_id))), 
+                                            as.numeric(fight_temp), 
+                                            as.numeric(actor_temp), 
+                                            as.numeric(targetID_code$id[1])))$data$reportData$report$events$data %>% 
           filter(abilityGameID==42833 | abilityGameID==42891) %>%
           select(timestamp,abilityGameID) %>%
           mutate(delay = timestamp-lag(timestamp)) %>%
@@ -712,8 +735,15 @@ server <- function(input, output,session) {
         
         
         ## Render output
+        output$summary_header <- renderUI({
+          
+          HTML(paste(paste0("<h3> Metrics for ",actor_name,
+                            " on ",fight_name," - ",
+                            sub_spec," ",spec_image,"</h3>"), 
+                     sep = '<br/>'))
+        })
         
-        output$summary <- renderUI({
+        output$summary_ignite <- renderUI({
           
           ### Munching ###
           
@@ -721,7 +751,6 @@ server <- function(input, output,session) {
           
           str1 <- paste0( "- Expected ignite damage <sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
           str2 <- paste0( "- Actual ignite damage dealt <sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
-          str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
           str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
           str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE), " - ",
                                    prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE),
@@ -743,32 +772,15 @@ server <- function(input, output,session) {
           
           ### Ignite ###
           
-          str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_summ1 <- paste0("- Final expected ignite damage dealt <sup>*</sup>: ",
                               prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
                                " - ",  
                                prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
                                " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
-          ### Living bomb ###
-          
-          str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
-          
-          ### Delay gaps ###
-          
-          str_delay_1 <- paste0("- Avg. Delay: ", mean(casts$delay,na.rm=T)," ms")
-          str_delay_2 <- paste0("- Max. Delay: ", max(casts$delay,na.rm=T), " ms")
-          str_delay_3 <- paste0("- Min Delay: ", min(casts$delay,na.rm=T) , " ms")
-          
-          str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts))
-          str_delay_5 <- paste0("- Delays at 0ms: ", 
-                                nrow(casts %>% filter(delay == 0)), " ||| Delays at >0ms and <100ms: ",
-                                nrow(casts %>% filter(delay > 0 & delay < 100)))
-
+        
           ## Final format
-          HTML(paste(paste0("<h3> Metrics for ",actor_name,
-                            " on ",fight_name," - ",
-                            sub_spec," ",spec_image,"</h3>"),
+          HTML(paste(
                      paste0("<h4> Ignite Measurement </h4>"),
                      str5,
                      str1, #Expected ignite damage 
@@ -778,42 +790,67 @@ server <- function(input, output,session) {
                      str2, 
                      paste0("<b>Result:</b> ",str4),
                      "<br/",
-                     paste0("<h4> Other Ignite metrics </h4>"),
-                     str2_res,
-                     str_max,
-                     "<br/",
-                     paste0("<h4> Living Bomb metrics </h4>"),
-                     str_lb_clip,
-                     "<br/",
-                     paste0("<h4> Work-in-progress (On-going testing)</h4>"),
-                     paste0("Milliseconds (ms) between Fireball and Pyroblast casts (<750ms):"),
-                     str_delay_4,str_delay_5,
-                     "<br/",
-                     str_delay_1,
-                     str_delay_2,str_delay_3,
-                     #str_min,
-                     "<br/",
-                     "<br/",
-                     paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
-                     paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
-                     paste0("<i><sup>*</sup> This numbers are BEFORE partial resists.</i>"), 
                      sep = '<br/>'))
           
         })
         
+        output$summary_ignite2 <- renderUI({
+          
+          str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
+          str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+          ## Final format
+          HTML(paste(
+            paste0("<h4> Other Ignite metrics </h4>"),
+            str2_res,
+            str_max,
+            sep = '<br/>'))
+          
+        })
+        output$everything_else <- renderUI({
+        
+        ### Living bomb ###
+        
+        str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
+        
+        ### Delay gaps ###
+        
+        str_delay_1 <- paste0("- Avg. Delay: ", mean(casts$delay,na.rm=T)," ms")
+        str_delay_2 <- paste0("- Max. Delay: ", max(casts$delay,na.rm=T), " ms")
+        str_delay_3 <- paste0("- Min Delay: ", min(casts$delay,na.rm=T) , " ms")
+        
+        str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts))
+        str_delay_5 <- paste0("- Delays at 0ms: ", 
+                              nrow(casts %>% filter(delay == 0)), " ||| Delays at >0ms and <100ms: ",
+                              nrow(casts %>% filter(delay > 0 & delay < 100)))
+        
+        
+        ## Final format
+        HTML(paste(
+          "<br/",
+          paste0("<h4> Living Bomb metrics </h4>"),
+          str_lb_clip,
+          "<br/",
+          paste0("<h4> Work-in-progress (On-going testing)</h4>"),
+          paste0("Milliseconds (ms) between Fireball and Pyroblast casts (<750ms):"),
+          str_delay_4,str_delay_5,
+          "<br/",
+          str_delay_1,
+          str_delay_2,str_delay_3,
+          #str_min,
+          "<br/",
+          "<br/",
+          paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
+          paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
+          paste0("<i><sup>*</sup> This numbers are BEFORE partial resists.</i>"), 
+          sep = '<br/>'))
+        
+      })
+        
         
       } else {
         
-        showModal(modalDialog(
-          title = "Error 2",
-          paste0("It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing",fight_temp,actor_temp),
-          easyClose = TRUE,
-          footer = tagList(
-            modalButton("OK")
-          )
-        ))
-        
-        
+        showModal(error_diag(error3,3))
+  
       }
       
     } else if(spec!="No Spec"){

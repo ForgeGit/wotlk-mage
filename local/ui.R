@@ -152,9 +152,16 @@ ui <- fluidPage(
         column(width = 12, uiOutput("summary_header"))
       ),
       br(),
+      
       fluidRow(
         column(width = 5, uiOutput("summary_ignite")),
         column(width = 3, uiOutput("summary_ignite2"))
+      ),
+      br(),
+      
+      fluidRow(
+        column(width = 4, uiOutput("summary_cast_1")),
+        column(width = 2, uiOutput("summary_cast_2"))
       ),
       fluidRow(
         column(width = 12, uiOutput("everything_else"))

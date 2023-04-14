@@ -723,7 +723,7 @@ server <- function(input, output,session) {
         
         ### Cast gaps extraction
         
-        casts <- WCL_API2_request(sprintf(request_cast, 
+        casts_fb_pyro <- WCL_API2_request(sprintf(request_cast, 
                                             as.character(extract_log_id(as.character(input$log_id))), 
                                             as.numeric(fight_temp), 
                                             as.numeric(actor_temp), 
@@ -749,8 +749,8 @@ server <- function(input, output,session) {
           
           Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
           
-          str1 <- paste0( "- Expected ignite damage <sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
-          str2 <- paste0( "- Actual ignite damage dealt <sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
+          str1 <- paste0( "- Expected ignite damage<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
+          str2 <- paste0( "- Actual ignite damage dealt<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
           str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
           str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE), " - ",
                                    prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE),
@@ -781,7 +781,7 @@ server <- function(input, output,session) {
         
           ## Final format
           HTML(paste(
-                     paste0("<h4> Ignite Measurement </h4>"),
+                     paste0("<h4> <b> Ignite Measurement (Main Target only) </b> </h4>"),
                      str5,
                      str1, #Expected ignite damage 
                      str3, # Lost death
@@ -800,47 +800,112 @@ server <- function(input, output,session) {
           str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           ## Final format
           HTML(paste(
-            paste0("<h4> Other Ignite metrics </h4>"),
+            paste0("<h4><b> Other Ignite metrics </b></h4>"),
             str2_res,
             str_max,
             sep = '<br/>'))
           
         })
+        
+        
+        output$summary_cast_1 <- renderUI({
+          
+          ### Delay gaps ###
+          str_delay_4 <- paste0("- Total Insta-Pyros (immediatebly after fireball): ", nrow(casts_fb_pyro))
+          
+          
+          ### Alert for 0ms casts
+          if( (nrow(casts_fb_pyro %>% 
+                    filter(delay == 0)) / nrow(casts_fb_pyro) ) > 0 & 
+              (nrow(casts_fb_pyro %>% 
+                    filter(delay == 0)) / nrow(casts_fb_pyro) ) < 0.30 & 
+              sub_spec=="TTW"){
+            
+            str_delay_5 <- paste0("<font color=\"#D78613\"> - Delays at 0ms: ", 
+                                  nrow(casts_fb_pyro %>% 
+                                         filter(delay == 0)),"</font>"
+            )
+            str_alert <- paste0("<font color=\"#D78613\">You have some fail-rate on your WA or munching prevention method.<sup>4</sup></font>")
+            
+          } else if((nrow(casts_fb_pyro %>% 
+                          filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.30  & 
+                    sub_spec=="TTW"){
+            
+            str_delay_5 <- paste0("<font color=\"#BE5350\"> - Delays at 0ms: ", 
+                                  nrow(casts_fb_pyro %>% 
+                                         filter(delay == 0)),"</font>")
+            str_alert <- paste0("<font color=\"#BE5350\">Are you using a WA for munching?<sup>4</sup></font>")
+            
+          } else if(sub_spec=="TTW") {       
+            str_delay_5 <- paste0("<font color=\"#54A5BE\"> - Delays at 0ms: ", 
+                                  nrow(casts_fb_pyro %>% 
+                                         filter(delay == 0)),"</font>")
+            str_alert <- paste0("<font color=\"#54A5BE\">Your WA or anti-munching method seems to be working.<sup>4</sup></font>")
+            
+          } else {str_delay_5 <- paste0("- Delays at 0ms: ", 
+                                        nrow(casts_fb_pyro %>% 
+                                               filter(delay == 0))) 
+          str_alert <- ""
+          
+          }
+          
+          
+          
+          str_delay_6 <- paste0("- Delays at >0ms and <100ms: ",
+                                nrow(casts_fb_pyro %>% filter(delay > 0 & delay < 100))
+          )
+          
+          
+          HTML(paste(
+            paste0("<h4> <b>Cast metrics (Main Target only)</b> </h4>"),
+            paste0("<b>Ms<sup>3</sup> between Fireball and Pyroblast casts (<750ms):</b>"),
+            str_delay_4,
+            str_delay_5,
+            str_delay_6,
+            str_alert,
+            "<br/",
+            sep = '<br/>'))
+          
+        }) 
+        
+        
+        output$summary_cast_2 <- renderUI({
+
+          ### Delay gaps ###
+          
+          str_delay_1 <- paste0("- Avg. Delay: ", mean(casts_fb_pyro$delay,na.rm=T)," ms")
+          str_delay_2 <- paste0("- Max. Delay: ", max(casts_fb_pyro$delay,na.rm=T), " ms")
+          str_delay_3 <- paste0("- Min Delay: ", min(casts_fb_pyro$delay,na.rm=T) , " ms")
+          
+          HTML(paste("<br/",
+                     "<br/",
+                     "<br/",
+                     str_delay_1,
+                     str_delay_2,str_delay_3,
+                     sep = '<br/>'))
+          
+          
+        }) 
+        
         output$everything_else <- renderUI({
-        
-        ### Living bomb ###
-        
-        str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
-        
-        ### Delay gaps ###
-        
-        str_delay_1 <- paste0("- Avg. Delay: ", mean(casts$delay,na.rm=T)," ms")
-        str_delay_2 <- paste0("- Max. Delay: ", max(casts$delay,na.rm=T), " ms")
-        str_delay_3 <- paste0("- Min Delay: ", min(casts$delay,na.rm=T) , " ms")
-        
-        str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts))
-        str_delay_5 <- paste0("- Delays at 0ms: ", 
-                              nrow(casts %>% filter(delay == 0)), " ||| Delays at >0ms and <100ms: ",
-                              nrow(casts %>% filter(delay > 0 & delay < 100)))
+          
+          ### Living bomb ###
+          
+          str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
         
         
         ## Final format
         HTML(paste(
           "<br/",
-          paste0("<h4> Living Bomb metrics </h4>"),
+          paste0("<h4> <b> Living Bomb metrics (Main Target only)</h4> </b>"),
           str_lb_clip,
-          "<br/",
-          paste0("<h4> Work-in-progress (On-going testing)</h4>"),
-          paste0("Milliseconds (ms) between Fireball and Pyroblast casts (<750ms):"),
-          str_delay_4,str_delay_5,
-          "<br/",
-          str_delay_1,
-          str_delay_2,str_delay_3,
           #str_min,
           "<br/",
           "<br/",
           paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
           paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
+          paste0("<i><sup>3</sup> Milliseconds; 1,000 milliseconds = 1 second.</i>"), 
+          paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left)</i>"), 
           paste0("<i><sup>*</sup> This numbers are BEFORE partial resists.</i>"), 
           sep = '<br/>'))
         

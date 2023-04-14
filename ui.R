@@ -108,7 +108,7 @@ ui <- fluidPage(
       br(),
       "Notes:",
       br(),
-      "- If you do not interact with the app for an extended period, it may temporarily 'grey out.' If this occurs, please refresh the page. If the app crashes after pressing a button, please refresh the page and try again or contact me.",
+      "- If you do not interact with the app for an extended period, it will 'grey out.' If this occurs, please refresh the page. If the app crashes after pressing a button, please refresh the page and try again or contact me.",
       br(),
       "- The app currently supports only a limited number of bosses",
       br(),

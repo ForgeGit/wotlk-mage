@@ -175,12 +175,11 @@ request_cast<-'{
     reportData {
         report(code: "%s") {
             events(
-                dataType: Casts
+                dataType: All
                 startTime: 0
                 endTime: 999999999999
                 fightIDs: %i
                 sourceID: %i
-                targetID: %i
                 hostilityType: Friendlies
                 includeResources: false
                 
@@ -702,8 +701,8 @@ server <- function(input, output,session) {
       if(length(request)!=0){
         
         ignite_table_debug <- request %>% 
-          filter(targetID==as.numeric(targetID_code$id[1])) %>%
-          ignite_cleaning()
+          filter(targetID==as.numeric(targetID_code$id[1])& sourceID==as.numeric(actor_temp)) %>% # Source ID for pets like pumpkin
+          ignite_cleaning() # See Algalon C9t67a4LWNqpvmcj 
         
         ignite_table <- ignite_table_debug %>%
           ignite_summary()
@@ -723,15 +722,49 @@ server <- function(input, output,session) {
         
         ### Cast gaps extraction
         
-        casts_fb_pyro <- WCL_API2_request(sprintf(request_cast, 
+        casts <- WCL_API2_request(sprintf(request_cast, 
                                             as.character(extract_log_id(as.character(input$log_id))), 
                                             as.numeric(fight_temp), 
-                                            as.numeric(actor_temp), 
-                                            as.numeric(targetID_code$id[1])))$data$reportData$report$events$data %>% 
-          filter(abilityGameID==42833 | abilityGameID==42891) %>%
+                                            as.numeric(actor_temp)))$data$reportData$report$events$data 
+        
+        casts_fb_pyro <- casts %>% 
+          filter((abilityGameID==42833 | abilityGameID==42891) & 
+                   targetID == as.numeric(targetID_code$id[1])
+                 ) %>%
           select(timestamp,abilityGameID) %>%
           mutate(delay = timestamp-lag(timestamp)) %>%
           filter(delay<750)
+        
+        
+        pyro_interrupt <- casts %>% 
+          filter(abilityGameID==42891 & 
+                   !(type%in%
+                       c("damage","refreshdebuff",
+                         "applydebuff","removedebuff")) 
+                 )%>%
+          mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
+                                           type=="begincast",
+                                         "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+        
+        fireball_interrupt <- casts %>% 
+          filter(abilityGameID==42833 & 
+                   !(type%in%
+                       c("damage","refreshdebuff",
+                         "applydebuff","removedebuff")) 
+          )%>%
+          mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
+                                           type=="begincast",
+                                         "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+        
+        frostfirebolt_interrupt <- casts %>% 
+          filter(abilityGameID==47610 & 
+                   !(type%in%
+                       c("damage","refreshdebuff",
+                         "applydebuff","removedebuff")) 
+          )%>%
+          mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
+                                           type=="begincast",
+                                         "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
         
         
         ## Render output
@@ -779,9 +812,13 @@ server <- function(input, output,session) {
                                prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
                                " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
         
+          
+          
+          ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
+          
           ## Final format
           HTML(paste(
-                     paste0("<h4> <b> Ignite Measurement (Main Target only) </b> </h4>"),
+                     paste0(ignite_img,"<h4> <b> Ignite Measurement (Main Target only) </b> </h4>"),
                      str5,
                      str1, #Expected ignite damage 
                      str3, # Lost death
@@ -795,12 +832,13 @@ server <- function(input, output,session) {
         })
         
         output$summary_ignite2 <- renderUI({
+          ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
           
           str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
           str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           ## Final format
           HTML(paste(
-            paste0("<h4><b> Other Ignite metrics </b></h4>"),
+            paste0(ignite_img,"<h4><b> Other Ignite metrics </b></h4>"),
             str2_res,
             str_max,
             sep = '<br/>'))
@@ -811,7 +849,6 @@ server <- function(input, output,session) {
         output$summary_cast_1 <- renderUI({
           
           ### Delay gaps ###
-          str_delay_4 <- paste0("- Total Insta-Pyros (immediatebly after fireball): ", nrow(casts_fb_pyro))
           
           
           ### Alert for 0ms casts
@@ -825,7 +862,7 @@ server <- function(input, output,session) {
                                   nrow(casts_fb_pyro %>% 
                                          filter(delay == 0)),"</font>"
             )
-            str_alert <- paste0("<font color=\"#D78613\">You have some fail-rate on your WA or munching prevention method.<sup>4</sup></font>")
+            str_alert <- paste0("<font color=\"#D78613\">Your munching prevention method might be failing ocasionally.<sup>4</sup></font>")
             
           } else if((nrow(casts_fb_pyro %>% 
                           filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.30  & 
@@ -850,20 +887,27 @@ server <- function(input, output,session) {
           }
           
           
-          
           str_delay_6 <- paste0("- Delays at >0ms and <100ms: ",
-                                nrow(casts_fb_pyro %>% filter(delay > 0 & delay < 100))
-          )
+                                nrow(casts_fb_pyro %>% filter(delay > 0 & delay < 100)))
+          
+          str_delay_7 <- paste0("- Delays at >=100ms and <300ms: ",
+                                nrow(casts_fb_pyro %>% filter(delay >= 100 & delay < 300)))
+          
+          str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
+          
+          casts_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_hunter_pet_turtle.jpg' height='20' width='20'/>"
           
           
           HTML(paste(
-            paste0("<h4> <b>Cast metrics (Main Target only)</b> </h4>"),
+            paste0(casts_img,"<h4> <b>Cast metrics (Main Target only)</b> </h4>"),
             paste0("<b>Ms<sup>3</sup> between Fireball and Pyroblast casts (<750ms):</b>"),
-            str_delay_4,
             str_delay_5,
             str_delay_6,
+            str_delay_7,
             str_alert,
             "<br/",
+            paste0("<b>Living Bomb metrics:</b>"),
+            str_lb_clip,
             sep = '<br/>'))
           
         }) 
@@ -873,15 +917,18 @@ server <- function(input, output,session) {
 
           ### Delay gaps ###
           
-          str_delay_1 <- paste0("- Avg. Delay: ", mean(casts_fb_pyro$delay,na.rm=T)," ms")
+          str_delay_1 <- paste0("- Avg. Delay: ", as.integer(mean(casts_fb_pyro$delay,na.rm=T))," ms")
           str_delay_2 <- paste0("- Max. Delay: ", max(casts_fb_pyro$delay,na.rm=T), " ms")
           str_delay_3 <- paste0("- Min Delay: ", min(casts_fb_pyro$delay,na.rm=T) , " ms")
+          str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts_fb_pyro))
+          
           
           HTML(paste("<br/",
                      "<br/",
                      "<br/",
                      str_delay_1,
-                     str_delay_2,str_delay_3,
+                     str_delay_2,str_delay_3, str_delay_4,
+
                      sep = '<br/>'))
           
           
@@ -891,14 +938,20 @@ server <- function(input, output,session) {
           
           ### Living bomb ###
           
-          str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
-        
+          str_pyro <- paste0("- Pyroblasts cancelled: ",nrow(pyro_interrupt)) 
+          str_fb <- paste0("- Fireball cancelled: ",nrow(fireball_interrupt)) 
+          str_ffb <- paste0("- Frostfire Bolt cancelled: ",nrow(frostfirebolt_interrupt)) 
+          fblast_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_fireball.jpg' height='20' width='20'/>"
+          
+          if (sub_spec=="FFB"){
+          str_mainspell <- str_ffb} else if(sub_spec=="TTW"){str_mainspell <- str_fb }
         
         ## Final format
         HTML(paste(
           "<br/",
-          paste0("<h4> <b> Living Bomb metrics (Main Target only)</h4> </b>"),
-          str_lb_clip,
+          paste0(fblast_img,"<h4> <b> Cast Metrics (Encounter-wide, All Targets)</h4> </b>"),
+          str_pyro,
+          str_mainspell,
           #str_min,
           "<br/",
           "<br/",

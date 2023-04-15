@@ -155,7 +155,7 @@ ui <- fluidPage(
       
       fluidRow(
         column(width = 5, uiOutput("summary_ignite")),
-        column(width = 3, uiOutput("summary_ignite2"))
+        column(width = 4, uiOutput("summary_ignite2"))
       ),
       br(),
       
@@ -164,10 +164,20 @@ ui <- fluidPage(
         column(width = 3, uiOutput("summary_cast_2"))
       ),
       fluidRow(
-        column(width = 12, uiOutput("everything_else"))
+        column(width = 5, uiOutput("everything_else_1")),
+        column(width = 3, uiOutput("everything_else_2"))
+      ),
+      fluidRow(
+        column(width = 12, uiOutput("everything_else_3"))
+      ),
+      fluidRow(
+        column(width = 12, uiOutput("extra_algalon"))
       ),
       fluidRow(
         column(width = 12, dataTableOutput("table2"))
+      ),
+      fluidRow(
+        column(width = 12, uiOutput("extra_else"))
       )
     )
   )

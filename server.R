@@ -1110,9 +1110,9 @@ server <- function(input, output,session) {
         })
         ### Leaderboard
         
-        a<- gargle_oauth_client(id=fromJSON(Sys.getenv("DRIVE_KEYaa"))$web$client_id,
-                                secret=fromJSON(Sys.getenv("DRIVE_KEY"))$web$client_secret,
-                                name=fromJSON(Sys.getenv("DRIVE_KEY"))$web$project_id)
+        a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
+                                secret=Sys.getenv("DRIVE_SECRET"),
+                                name="mage-analytics")
         drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
         gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
         #a<-gar_auth_service(json = json_string2)

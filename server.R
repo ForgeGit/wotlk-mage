@@ -1111,7 +1111,7 @@ server <- function(input, output,session) {
         
         
         ### Leaderboard
-        creds <- jsonlite::fromJSON(as.character(Sys.getenv("DRIVE_KEY")))
+        creds <- jsonlite::fromJSON(Sys.getenv("DRIVE_KEY"))
       #  options(googlesheets4.httr_oauth_cache = TRUE)
       #  gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
        # drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)

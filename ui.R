@@ -154,7 +154,7 @@ ui <- fluidPage(
       br(),
       
       fluidRow(
-        column(width = 5, uiOutput("summary_ignite")),
+        column(width = 5, withSpinner(uiOutput("summary_ignite"),color="red")),
         column(width = 4, uiOutput("summary_ignite2"))
       ),
       br(),
@@ -168,7 +168,9 @@ ui <- fluidPage(
         column(width = 3, uiOutput("everything_else_2"))
       ),
       fluidRow(
-        column(width = 12, uiOutput("everything_else_3"))
+        column(width = 12,uiOutput("everything_else_3")
+               
+        )
       ),
       fluidRow(
         column(width = 12, uiOutput("extra_algalon"))

@@ -6,6 +6,10 @@ library(tidyr)
 library(readr)
 library(DT)
 library(shinythemes)
+library(googlesheets4)
+library(googledrive)
+library(shinycssloaders)
+
 #source("./helpers.R")
 
 port <- Sys.getenv('PORT')

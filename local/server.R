@@ -321,25 +321,25 @@ ignite_cleaning <- function(x) {
       
       trueIgnite = as.character(
         ifelse(abilityGameID=="Ignite" &  
-                            (as.integer(igniteSUB) ==  as.integer(round(lag(igniteREM)) / 2) |
-                               as.integer(igniteSUB) + 1 ==  as.integer(round(lag(igniteREM)) / 2) |
-                               as.integer(igniteSUB) - 1 ==  as.integer(round(lag(igniteREM)) / 2)|
-                               as.integer(igniteSUB) + 2 ==  as.integer(round(lag(igniteREM)) / 2) |
-                               as.integer(igniteSUB) - 2 ==  as.integer(round(lag(igniteREM)) / 2)) &  
-                            lag(abilityGameID)!="Ignite",
-                          "YES", 
-                          ifelse(abilityGameID=="Ignite" &   
-                                   (as.integer(igniteSUB) !=  as.integer(round(lag(igniteREM)) / 2) |
-                                      as.integer(igniteSUB) + 1 !=  as.integer(round(lag(igniteREM)) / 2) |
-                                      as.integer(igniteSUB) - 1 !=  as.integer(round(lag(igniteREM)) / 2)|
-                                      as.integer(igniteSUB) + 2 !=  as.integer(round(lag(igniteREM)) / 2) |
-                                      as.integer(igniteSUB) - 2 !=  as.integer(round(lag(igniteREM)) / 2)) &  
-                                   lag(abilityGameID)!="Ignite",
-                                 "NO",
-                                 ifelse(abilityGameID=="Ignite" &  
-                                          lag(abilityGameID)=="Ignite",
-                                        "END",NA)))
-        ),
+                 (as.integer(igniteSUB) ==  as.integer(round(lag(igniteREM)) / 2) |
+                    as.integer(igniteSUB) + 1 ==  as.integer(round(lag(igniteREM)) / 2) |
+                    as.integer(igniteSUB) - 1 ==  as.integer(round(lag(igniteREM)) / 2)|
+                    as.integer(igniteSUB) + 2 ==  as.integer(round(lag(igniteREM)) / 2) |
+                    as.integer(igniteSUB) - 2 ==  as.integer(round(lag(igniteREM)) / 2)) &  
+                 lag(abilityGameID)!="Ignite",
+               "YES", 
+               ifelse(abilityGameID=="Ignite" &   
+                        (as.integer(igniteSUB) !=  as.integer(round(lag(igniteREM)) / 2) |
+                           as.integer(igniteSUB) + 1 !=  as.integer(round(lag(igniteREM)) / 2) |
+                           as.integer(igniteSUB) - 1 !=  as.integer(round(lag(igniteREM)) / 2)|
+                           as.integer(igniteSUB) + 2 !=  as.integer(round(lag(igniteREM)) / 2) |
+                           as.integer(igniteSUB) - 2 !=  as.integer(round(lag(igniteREM)) / 2)) &  
+                        lag(abilityGameID)!="Ignite",
+                      "NO",
+                      ifelse(abilityGameID=="Ignite" &  
+                               lag(abilityGameID)=="Ignite",
+                             "END",NA)))
+      ),
       
       ## How much it was munched
       munched = as.integer(ceiling(
@@ -434,10 +434,10 @@ extract_log_id <- function(log_input) {
 ############################### SERVER ############################### 
 
 server <- function(input, output,session) {
- 
+  
   output$summary_ignite <- renderUI({ HTML(paste(paste0("")))})
   
-  ### Style settings ####
+  #### Style settings #####
   
   tags$style(HTML("
     h4, .h4 {
@@ -446,10 +446,13 @@ server <- function(input, output,session) {
     }
   "))
   
-  ### Actors list ####
+  #### Submit log ID (Prep) ####
+  
+  ##### + Actors list ######
   
   actors <-eventReactive(input$submit_log_id, {
     
+    ###### Actor Download ######
     actors<-WCL_API2_request(
       sprintf(
         request_actors, # Request 
@@ -458,15 +461,19 @@ server <- function(input, output,session) {
     )$data$reportData$report$masterData$actors
     
     if(!is.null(actors)){
+      
       actors %>% 
         filter(subType %in% c("NPC","Boss","Mage","Unknown")) # Exclude unnecesary classes/pets
+      
     }else{
+      
       "NO DATA"
+      
     }
     
   })
   
-  ### Fights list ####
+  ##### + Fights list ######
   
   fights <-eventReactive(input$submit_log_id, {
     
@@ -478,52 +485,53 @@ server <- function(input, output,session) {
     )$data$reportData$report$fights
     
     if(!is.null(fights)){
-    
-    ### DR. Boom logic
-    if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
-      fights
-    } else if(max(fights$encounterID)>0) {
       
-      fights %>% 
-        filter(encounterID!=0) %>% 
+      ##### Dr Boom Identification #####
+      if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+        fights
+      } else if(max(fights$encounterID)>0) {
         
-        filter(encounterID %in% boss_list) %>% 
+        fights %>% 
+          filter(encounterID!=0) %>% 
+          
+          filter(encounterID %in% boss_list) %>% 
+          
+          mutate(encounterID_2 = as.character(encounterID),
+                 
+                 encounterID_2 = case_when(encounterID_2 == '757' ~ 'Algalon',
+                                           encounterID_2 == '752' ~ 'Thorim',
+                                           encounterID_2 == '755' ~ 'Vezax',
+                                           encounterID_2 == '746'  ~ 'Razorscale',
+                                           encounterID_2 == '750'  ~ 'Auriaya',
+                                           encounterID_2 == '749'  ~ 'Kologarn',
+                                           encounterID_2 == '745'  ~ 'Ignis',
+                                           encounterID_2 == '751'  ~ 'Hodir',
+                                           encounterID_2 == '753'  ~ 'Freya',
+                                           
+                                           TRUE ~ encounterID_2),
+                 
+                 encounterID_2 = ifelse(kill==0, 
+                                        paste0(encounterID_2, " (Fight:",id," - Wipe)"), 
+                                        paste0(encounterID_2, " (Fight:",id," - Kill)")
+                 )
+          )
         
-        mutate(encounterID_2 = as.character(encounterID),
-               
-               encounterID_2 = case_when(encounterID_2 == '757' ~ 'Algalon',
-                                         encounterID_2 == '752' ~ 'Thorim',
-                                         encounterID_2 == '755' ~ 'Vezax',
-                                         encounterID_2 == '746'  ~ 'Razorscale',
-                                       encounterID_2 == '750'  ~ 'Auriaya',
-                                       encounterID_2 == '749'  ~ 'Kologarn',
-                                       encounterID_2 == '745'  ~ 'Ignis',
-                                       encounterID_2 == '751'  ~ 'Hodir',
-                                       encounterID_2 == '753'  ~ 'Freya',
-                                       
-                                       TRUE ~ encounterID_2),
-               
-               encounterID_2 = ifelse(kill==0, 
-                                    paste0(encounterID_2, " (Fight:",id," - Wipe)"), 
-                                    paste0(encounterID_2, " (Fight:",id," - Kill)")
-               )
-        )
+      }else{
+        "NO DATA"
+      }
       
-    }else{
-      "NO DATA"
-    }
-        
     }else{
       "NO DATA"
     }
     
   })
   
-  ### Actors list update ####
+  ### Submit log ID (display) ####
   
   observeEvent(input$submit_log_id, {
     
-    ### Actor update ###
+    #####+ Actor display ####
+    
     if(is.data.frame(actors())==TRUE){
       
       mages <- actors() %>% 
@@ -533,8 +541,8 @@ server <- function(input, output,session) {
       if(nrow(mages)>0){
         
         updateSelectInput(session, "character", choices = mages$name)
-      
-        ### DR. Boom logic
+        
+        ###### Dr. Boom logic ####
         
       } else if(any(actors()$name %in% c("Dr. Boom"))==TRUE) {
         
@@ -546,19 +554,22 @@ server <- function(input, output,session) {
       }
       
     } else if(is.data.frame(actors())==FALSE) {
-      
+      ###### Modal Error 1 ####
       showModal(error_diag(error1,1))
       updateSelectInput(session, "character", choices = actors())
     }
     
     
-    ### Fight Update ###
+    ##### + Fights display #####
+    
     if(is.data.frame(fights())==TRUE){
       
       if(max(fights()$encounterID)>0){
         
         updateSelectInput(session, "fight", choices = fights()$encounterID_2)
-      
+        
+        ###### Dr. Boom logic ####
+        
       } else if(any(actors()$name %in% c("Dr. Boom"))==TRUE){  
         
         updateSelectInput(session, "fight", choices = fights()$startTime)
@@ -574,16 +585,16 @@ server <- function(input, output,session) {
       }
       
     } else if(is.data.frame(fights())==FALSE & actors()!="NO DATA") {
-      
+      ###### Modal Error 2 ######
       showModal(error_diag(error2,2))
       updateSelectInput(session, "fight", choices = fights())
     }
     
   })
-
-
-### STEP 2: Retrieve data and estimations ####
- 
+  
+  
+  ### STEP 2: Retrieve data and estimations ####
+  
   observeEvent(input$submit_char_id, {
     
     output$summary_ignite <- renderUI({ HTML(paste(paste0("")))})
@@ -602,7 +613,7 @@ server <- function(input, output,session) {
     }else {
       fight_temp <- parse_number(input$fight)
     }
-
+    
     
     actor_name <- input$character
     
@@ -615,12 +626,12 @@ server <- function(input, output,session) {
       actor_temp <- actor_temp$id[1]
       
     }else {
-    actor_temp <- parse_number(input$character)
+      actor_temp <- parse_number(input$character)
     }
     
     
     ### Spec detection
-  
+    
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
     request <- WCL_API2_request(
@@ -650,7 +661,7 @@ server <- function(input, output,session) {
     
     ## Fire mages only from here onward
     ## Have to change for frost ignite spec
-  
+    
     if(spec=="Fire" |  any(actors()$name %in% c("Dr. Boom"))==TRUE ){
       
       
@@ -658,8 +669,8 @@ server <- function(input, output,session) {
       
       if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
         fight_name="Dr. Boom"
-        }
-
+      }
+      
       targetID_code <- actors() %>%
         filter(
           grepl(
@@ -679,41 +690,41 @@ server <- function(input, output,session) {
       ## Sub-spec detection
       if(spec!="No Spec"){
         
-      sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],
-                         "TTW",
-                         ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB",
-                                "Error - Contact Forge#0001"))
-      
-      ## Image for spec
-      spec_image <- ifelse(sub_spec=="TTW",
-                           "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_flamebolt.jpg' height='25' width='25'/>",
-                           ifelse(sub_spec=="FFB",
-                                  "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
-                                  "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
+        sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],
+                           "TTW",
+                           ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB",
+                                  "Error - Contact Forge#0001"))
+        
+        ## Image for spec
+        spec_image <- ifelse(sub_spec=="TTW",
+                             "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_flamebolt.jpg' height='25' width='25'/>",
+                             ifelse(sub_spec=="FFB",
+                                    "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
+                                    "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
       } else {
         sub_spec <- spec   
         spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
-        }
+      }
       ### Damage and casts extraction
-
       
-       casts <- WCL_API2_request(sprintf(request_cast, 
-                                           as.character(extract_log_id(as.character(input$log_id))), 
-                                           as.numeric(fight_temp), 
-                                           as.numeric(actor_temp)))$data$reportData$report$events$data 
-            # request <- WCL_API2_request(sprintf(request_damage,  ## Damage 
-            #                               as.character(extract_log_id(as.character(input$log_id))),
-            #                               as.numeric(fight_temp), 
-            #                               as.numeric(actor_temp), 
-            #                               as.numeric(targetID_code$id[1])
-            #                               )
-            #                             )$data$reportData$report$events$data
-            # 
-            
-       
-       damage <- casts %>% filter(type=="damage" & targetID==as.numeric(targetID_code$id[1]))
-       
-       
+      
+      casts <- WCL_API2_request(sprintf(request_cast, 
+                                        as.character(extract_log_id(as.character(input$log_id))), 
+                                        as.numeric(fight_temp), 
+                                        as.numeric(actor_temp)))$data$reportData$report$events$data 
+      # request <- WCL_API2_request(sprintf(request_damage,  ## Damage 
+      #                               as.character(extract_log_id(as.character(input$log_id))),
+      #                               as.numeric(fight_temp), 
+      #                               as.numeric(actor_temp), 
+      #                               as.numeric(targetID_code$id[1])
+      #                               )
+      #                             )$data$reportData$report$events$data
+      # 
+      
+      
+      damage <- casts %>% filter(type=="damage" & targetID==as.numeric(targetID_code$id[1]))
+      
+      
       if(length(damage)!=0){
         
         ignite_table_debug <- damage %>% 
@@ -746,7 +757,7 @@ server <- function(input, output,session) {
         casts_fb_pyro <- casts %>% 
           filter((abilityGameID==42833 | abilityGameID==42891) & 
                    type=="cast"
-                 ) %>%
+          ) %>%
           select(timestamp,abilityGameID) %>%
           mutate(delay = timestamp-lag(timestamp)) %>%
           filter(delay<750)
@@ -758,7 +769,7 @@ server <- function(input, output,session) {
                    !(type%in%
                        c("damage","refreshdebuff",
                          "applydebuff","removedebuff")) 
-                 )%>%
+          )%>%
           mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
                                            type=="begincast",
                                          "Interrupted","OK")) %>% 
@@ -778,13 +789,13 @@ server <- function(input, output,session) {
                                     NA)
           ) %>% 
           filter(cast_time>500)
-      
+        
         ## Pyroblasts count
         
         pyro_n <- casts %>% 
           filter(abilityGameID==42891 & 
                    type=="cast") 
-
+        
         
         ## Fireball cancelled/interrupted
         
@@ -838,7 +849,7 @@ server <- function(input, output,session) {
         insta_pyros_db <- left_join(insta_pyros_db, 
                                     df_casts_per_set, by = "set")
         
-
+        
         ### Hot Streaks
         
         hot_streak_n <- casts %>% 
@@ -869,15 +880,15 @@ server <- function(input, output,session) {
         output$summary_ignite <- renderUI({
           
           ### Munching ###
-        
+          
           Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
           
           str1 <- paste0( "- Expected ignite damage<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
           str2 <- paste0( "- Actual ignite damage dealt<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
           str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
           str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE), " - ",
-                                   prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE),
-                                   " = ",
+                         prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE),
+                         " = ",
                          prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
           
           if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
@@ -898,24 +909,24 @@ server <- function(input, output,session) {
           str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_summ1 <- paste0("- Expected ignite damage before target death<sup>*</sup>: ",
                               prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
-                               " - ",  
-                               prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
-                               " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
-        
+                              " - ",  
+                              prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
+                              " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
+          
           
           
           ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
           
           ## Final format
           HTML(paste(
-                     paste0("<h4> <b>",ignite_img," Munching Metrics (Main Target only) </b> </h4>"),
-                     str5,
-                     str1, #Expected ignite damage 
-                     str_summ1, 
-                     str2, 
-                     paste0("<b>Result:</b> ",str4),
-                     "<br/",
-                     sep = '<br/>'))
+            paste0("<h4> <b>",ignite_img," Munching Metrics (Main Target only) </b> </h4>"),
+            str5,
+            str1, #Expected ignite damage 
+            str_summ1, 
+            str2, 
+            paste0("<b>Result:</b> ",str4),
+            "<br/",
+            sep = '<br/>'))
           
         })
         
@@ -1007,7 +1018,7 @@ server <- function(input, output,session) {
         
         
         output$summary_cast_2 <- renderUI({
-
+          
           ### Delay gaps ###
           
           str_delay_1 <- paste0("- Avg. Delay: ", as.integer(mean(casts_fb_pyro$delay,na.rm=T))," ms")
@@ -1022,7 +1033,7 @@ server <- function(input, output,session) {
                      "<br/",
                      str_delay_1,
                      str_delay_2,str_delay_3,str_delay_5, str_delay_4,
-
+                     
                      sep = '<br/>'))
           
           
@@ -1114,85 +1125,85 @@ server <- function(input, output,session) {
         })
         ### Leaderboard
         #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db
-     #   writesheet <- function(water, user) {
-       #   user <- URLencode(user)
-       #   water <- URLencode(as.character(water))
-       #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+        #   writesheet <- function(water, user) {
+        #   user <- URLencode(user)
+        #   water <- URLencode(as.character(water))
+        #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
         #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
         #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
         #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
         #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
-          url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
-                        as.character(extract_log_id(as.character(input$log_id))),
-                        "&entry.96171645=",
-                        sapply(strsplit(actor_name, " "), `[`, 1),
-                        "&entry.1179038397=",
-                        round(ignite_table$Munch_NET_2)*-1 ,"&entry.1734686763=",
-                        round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2),
-                        "&entry.1228481340=",
-                        sapply(strsplit(targetID_code$name[1], " "), `[`, 1))
-          
-          res <- POST(url = url)
-          #writesheet("user1", 700)  
-
-      #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)
-      #   encoded_content <- base64encode(file_content)
-      #   
-      #   # Decode the contents of the secret archive from base64
-      #   decoded_secret <- base64(encoded_content)
-      #   
-      #   # Write the decoded contents of the secret archive to a temporary file
-      #   tmpfile <- tempfile(fileext=".rar")
-      #   writeBin(charToRaw(decoded_secret),tmpfile,"output-file.ext")
-      #   
-      #   # Extract the contents of the secret archive
-      #   unzip(tmpfile, exdir = ".")
-      #   untar(tmpfile, exdir = ".")
-      #   
-      #   # Authenticate with Google Sheets using the extracted credentials
-      #   creds <- gs4_auth()
-      #   
-      #   # Set the credentials as the default authentication method
-      #   gs4_auth(creds = creds)
-      #   
-      #   # Read a sheet
-      #   sheet <- gs4_get("https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit")
-      #   
-      #   # Write to a sheet
-      #   gs4_write(sheet, data = mtcars, sheet = "MySheet", range = "A1")
-      #   ####
-      #   a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
-      #                           secret=Sys.getenv("DRIVE_SECRET"),
-      #                           name="mage-analytics",
-      #                           type="web",
-      #                          redirect_uris="https://wotlk-mage.herokuapp.com/")
-      #   
-      #   creds_a <- credentials_service_account(path= creds_str)
-      #   
-      #   gs4_auth(cache = ".secrets", email = TRUE, use_oob = TRUE)
-      #   gs4_auth(creds_a)
-      #   #gs4_auth(creds_a)
-      #   drive_auth(cache = ".secrets", email = TRUE)
-      #   #drive_deauth()
-      #   #drive_auth(email=Sys.getenv("EMAIL_DRIVE"),
-      #  #            token =a )#jsonlite::fromJSON(Sys.getenv("DRIVE_ACCOUNT")))
-      #   #gs4_auth(token=a,
-      #    #        email=Sys.getenv("EMAIL_DRIVE"))
-      #   #gs4_auth("canalhorchatero@gmail.com")
-      #   #gs4_auth(path=   Sys.getenv("DRIVE_KEY"))
-      #   #a<-gar_auth_service(json = json_string2)
-      #   
-      #   leaderboard <- read_sheet(drive_get("leaderboard"))
-      #    
-      # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
-      #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
-      #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
-      #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
-      #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
-      #    
-      # #write_sheet(leaderboard,ss=as.character(Sys.getenv("SHEET_KEY")),sheet="leaderboard")
-      #   
-
+        url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
+                      as.character(extract_log_id(as.character(input$log_id))),
+                      "&entry.96171645=",
+                      sapply(strsplit(actor_name, " "), `[`, 1),
+                      "&entry.1179038397=",
+                      round(ignite_table$Munch_NET_2)*-1 ,"&entry.1734686763=",
+                      round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2),
+                      "&entry.1228481340=",
+                      sapply(strsplit(targetID_code$name[1], " "), `[`, 1))
+        
+        res <- POST(url = url)
+        #writesheet("user1", 700)  
+        
+        #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)
+        #   encoded_content <- base64encode(file_content)
+        #   
+        #   # Decode the contents of the secret archive from base64
+        #   decoded_secret <- base64(encoded_content)
+        #   
+        #   # Write the decoded contents of the secret archive to a temporary file
+        #   tmpfile <- tempfile(fileext=".rar")
+        #   writeBin(charToRaw(decoded_secret),tmpfile,"output-file.ext")
+        #   
+        #   # Extract the contents of the secret archive
+        #   unzip(tmpfile, exdir = ".")
+        #   untar(tmpfile, exdir = ".")
+        #   
+        #   # Authenticate with Google Sheets using the extracted credentials
+        #   creds <- gs4_auth()
+        #   
+        #   # Set the credentials as the default authentication method
+        #   gs4_auth(creds = creds)
+        #   
+        #   # Read a sheet
+        #   sheet <- gs4_get("https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit")
+        #   
+        #   # Write to a sheet
+        #   gs4_write(sheet, data = mtcars, sheet = "MySheet", range = "A1")
+        #   ####
+        #   a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
+        #                           secret=Sys.getenv("DRIVE_SECRET"),
+        #                           name="mage-analytics",
+        #                           type="web",
+        #                          redirect_uris="https://wotlk-mage.herokuapp.com/")
+        #   
+        #   creds_a <- credentials_service_account(path= creds_str)
+        #   
+        #   gs4_auth(cache = ".secrets", email = TRUE, use_oob = TRUE)
+        #   gs4_auth(creds_a)
+        #   #gs4_auth(creds_a)
+        #   drive_auth(cache = ".secrets", email = TRUE)
+        #   #drive_deauth()
+        #   #drive_auth(email=Sys.getenv("EMAIL_DRIVE"),
+        #  #            token =a )#jsonlite::fromJSON(Sys.getenv("DRIVE_ACCOUNT")))
+        #   #gs4_auth(token=a,
+        #    #        email=Sys.getenv("EMAIL_DRIVE"))
+        #   #gs4_auth("canalhorchatero@gmail.com")
+        #   #gs4_auth(path=   Sys.getenv("DRIVE_KEY"))
+        #   #a<-gar_auth_service(json = json_string2)
+        #   
+        #   leaderboard <- read_sheet(drive_get("leaderboard"))
+        #    
+        # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+        #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+        #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+        #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+        #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+        #    
+        # #write_sheet(leaderboard,ss=as.character(Sys.getenv("SHEET_KEY")),sheet="leaderboard")
+        #   
+        
       } else {
         
         showModal(error_diag(paste0(error3,as.character(extract_log_id(as.character(input$log_id))),
@@ -1201,7 +1212,7 @@ server <- function(input, output,session) {
                                     as.numeric(targetID_code$id[1])),3))
         
       }
-       
+      
     } else if(spec!="No Spec"){
       
       showModal(modalDialog(
@@ -1248,7 +1259,7 @@ server <- function(input, output,session) {
         
         HTML(paste(
           str_pyro_hot,str_pyro_hard_2,#url, # creds$type, 
-
+          
           sep = '<br/>'))
         
       })  

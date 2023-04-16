@@ -1111,10 +1111,10 @@ server <- function(input, output,session) {
         ### Leaderboard
         
       #  a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
-                                secret=Sys.getenv("DRIVE_SECRET"),
-                                name="mage-analytics",
-                                type="web",
-                                redirect_uris="https://wotlk-mage.herokuapp.com/")
+                #                secret=Sys.getenv("DRIVE_SECRET"),
+                #                name="mage-analytics",
+             #                   type="web",
+               #                 redirect_uris="https://wotlk-mage.herokuapp.com/")
         #drive_deauth()
         #drive_auth(email=Sys.getenv("EMAIL_DRIVE"),
        #            token =a )#jsonlite::fromJSON(Sys.getenv("DRIVE_ACCOUNT")))

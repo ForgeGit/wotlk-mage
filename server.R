@@ -1121,13 +1121,13 @@ server <- function(input, output,session) {
           url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
                         as.character(extract_log_id(as.character(input$log_id))),
                         "&entry.96171645=",
-                        as.character(actor_name) ,
+                        sapply(strsplit(actor_name, " "), `[`, 1),
                         "&entry.1179038397=",
                         round(ignite_table$Munch_NET_2)*-1 ,"&entry.1734686763=",
                         round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2),
                         "&entry.1228481340=",targetID_code$name[1])
           
-         # res <- POST(url = url)
+          res <- POST(url = url)
           #writesheet("user1", 700)  
 
       #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)

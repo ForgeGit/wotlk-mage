@@ -1112,8 +1112,11 @@ server <- function(input, output,session) {
         
         a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
                                 secret=Sys.getenv("DRIVE_SECRET"),
-                                name="mage-analytics")
-        drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
+                                name="mage-analytics",
+                                type="web",
+                                redirect_uris="https://wotlk-mage.herokuapp.com/")
+        #drive_deauth()
+       drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
         gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
         #a<-gar_auth_service(json = json_string2)
         

@@ -1118,7 +1118,7 @@ server <- function(input, output,session) {
         #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
         #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
         #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
-          url <- paste0(Sys.getenv("LEADERBOARD_ID"),
+          url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
                         as.character(extract_log_id(as.character(input$log_id))),
                         "&entry.96171645=",
                         as.character(actor_name) ,

@@ -1109,7 +1109,7 @@ server <- function(input, output,session) {
                                      sep = '<br/>'))) }
         })
         ### Leaderboard
-        a<- gargle_oauth_client_from_json(Sys.getenv("DRIVE_KEY"))
+        a<- gargle_oauth_client_from_json(as.character(Sys.getenv("DRIVE_KEY")))
         drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
         gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
         #a<-gar_auth_service(json = json_string2)

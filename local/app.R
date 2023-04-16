@@ -9,6 +9,7 @@ library(shinythemes)
 library(googlesheets4)
 library(googledrive)
 library(shinycssloaders)
+library(gargle)
 
 source("./ui.R")
 source("./server.R")

@@ -1117,15 +1117,15 @@ server <- function(input, output,session) {
         drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
         })
    
-         #leaderboard <- read_sheet(drive_get("leaderboard"))
+         leaderboard <- read_sheet(drive_get("leaderboard"))
          
-         #leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
-         #leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
-         #leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
-         #leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
-        # leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+         leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+         leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+         leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+         leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+        leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
          
-       #  write_sheet(leaderboard,ss=as.character(Sys.getenv("SHEET_KEY")),sheet="leaderboard")
+       write_sheet(leaderboard,ss=as.character(Sys.getenv("SHEET_KEY")),sheet="leaderboard")
         
 
       } else {

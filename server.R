@@ -939,42 +939,46 @@ server <- function(input, output,session) {
           
           ### Delay gaps ###
           
-          
-          ### Alert for 0ms casts
-          if( (nrow(casts_fb_pyro %>% 
-                    filter(delay == 0)) / nrow(casts_fb_pyro) ) > 0 & 
-              (nrow(casts_fb_pyro %>% 
-                    filter(delay == 0)) / nrow(casts_fb_pyro) ) < 0.30 & 
-              sub_spec=="TTW"){
+          # Logic for grief TTW?
+          if(nrow(casts_fb_pyro)>0){
             
-            str_delay_5 <- paste0("<font color=\"#D78613\"> - Delays at 0ms: ", 
-                                  nrow(casts_fb_pyro %>% 
-                                         filter(delay == 0)),"</font>"
-            )
-            str_alert <- paste0("<font color=\"#D78613\">Your munching prevention method might be failing ocasionally.<sup>4</sup></font>")
+            ### Alert for 0ms casts
+            if( (nrow(casts_fb_pyro %>% 
+                      filter(delay == 0)) / nrow(casts_fb_pyro) ) > 0 & 
+                (nrow(casts_fb_pyro %>% 
+                      filter(delay == 0)) / nrow(casts_fb_pyro) ) < 0.30 & 
+                sub_spec=="TTW"){
+              
+              str_delay_5 <- paste0("<font color=\"#D78613\"> - Delays at 0ms: ", 
+                                    nrow(casts_fb_pyro %>% 
+                                           filter(delay == 0)),"</font>"
+              )
+              str_alert <- paste0("<font color=\"#D78613\">Your munching prevention method might be failing ocasionally.<sup>4</sup></font>")
+              
+            } else if((nrow(casts_fb_pyro %>% 
+                            filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.30  & 
+                      sub_spec=="TTW"){
+              
+              str_delay_5 <- paste0("<font color=\"#BE5350\"> - Delays at 0ms: ", 
+                                    nrow(casts_fb_pyro %>% 
+                                           filter(delay == 0)),"</font>")
+              str_alert <- paste0("<font color=\"#BE5350\">Are you using a WA for munching?<sup>4</sup></font>")
+              
+            } else if(sub_spec=="TTW") {       
+              str_delay_5 <- paste0("<font color=\"#54A5BE\"> - Delays at 0ms: ", 
+                                    nrow(casts_fb_pyro %>% 
+                                           filter(delay == 0)),"</font>")
+              str_alert <- paste0("<font color=\"#54A5BE\">Your WA or anti-munching method seems to be working.<sup>4</sup></font>")
+              
+            } else {str_delay_5 <- paste0("- Delays at 0ms: ", 
+                                          nrow(casts_fb_pyro %>% 
+                                                 filter(delay == 0))) 
+            str_alert <- ""
             
-          } else if((nrow(casts_fb_pyro %>% 
-                          filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.30  & 
-                    sub_spec=="TTW"){
-            
-            str_delay_5 <- paste0("<font color=\"#BE5350\"> - Delays at 0ms: ", 
-                                  nrow(casts_fb_pyro %>% 
-                                         filter(delay == 0)),"</font>")
-            str_alert <- paste0("<font color=\"#BE5350\">Are you using a WA for munching?<sup>4</sup></font>")
-            
-          } else if(sub_spec=="TTW") {       
-            str_delay_5 <- paste0("<font color=\"#54A5BE\"> - Delays at 0ms: ", 
-                                  nrow(casts_fb_pyro %>% 
-                                         filter(delay == 0)),"</font>")
-            str_alert <- paste0("<font color=\"#54A5BE\">Your WA or anti-munching method seems to be working.<sup>4</sup></font>")
-            
-          } else {str_delay_5 <- paste0("- Delays at 0ms: ", 
-                                        nrow(casts_fb_pyro %>% 
-                                               filter(delay == 0))) 
-          str_alert <- ""
-          
-          }
-          
+            }
+          } else {
+            str_delay_5="" 
+            str_alert=""}
           
           str_delay_6 <- paste0("- Delays at >0ms and <100ms: ",
                                 nrow(casts_fb_pyro %>% filter(delay > 0 & delay < 100)))
@@ -1125,7 +1129,8 @@ server <- function(input, output,session) {
                         "&entry.1179038397=",
                         round(ignite_table$Munch_NET_2)*-1 ,"&entry.1734686763=",
                         round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2),
-                        "&entry.1228481340=",targetID_code$name[1])
+                        "&entry.1228481340=",
+                        sapply(strsplit(targetID_code$name[1], " "), `[`, 1))
           
           res <- POST(url = url)
           #writesheet("user1", 700)  

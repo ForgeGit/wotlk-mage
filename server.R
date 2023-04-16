@@ -1116,7 +1116,7 @@ server <- function(input, output,session) {
                                 type="web",
                                 redirect_uris="https://wotlk-mage.herokuapp.com/")
         #drive_deauth()
-       drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
+       drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = jsonlite::fromJSON(Sys.getenv("DRIVE_ACCOUNT")))
         gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
         #a<-gar_auth_service(json = json_string2)
         

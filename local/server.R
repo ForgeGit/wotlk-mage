@@ -1111,20 +1111,20 @@ server <- function(input, output,session) {
         
         
         ### Leaderboard
-        creds <- jsonlite::fromJSON(Sys.getenv("DRIVE_KEY"))
-        options(googlesheets4.httr_oauth_cache = TRUE)
-        gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
-        drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
-        
-        leaderboard <- read_sheet(drive_get("leaderboard"))
-        
-        leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
-        leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
-        leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
-        leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
-        leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
-        
-        write_sheet(leaderboard,ss=Sys.getenv("SHEET_KEY"),sheet="leaderboard")
+        # creds <- jsonlite::fromJSON(Sys.getenv("DRIVE_KEY"))
+        # options(googlesheets4.httr_oauth_cache = TRUE)
+        # gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
+        # drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
+        # 
+        # leaderboard <- read_sheet(drive_get("leaderboard"))
+        # 
+        # leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+        # leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+        # leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+        # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+        # leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+        # 
+        # write_sheet(leaderboard,ss=Sys.getenv("SHEET_KEY"),sheet="leaderboard")
         
 
       } else {
@@ -1180,9 +1180,9 @@ server <- function(input, output,session) {
         str_pyro_hot <- paste0("- Pyroblasts w/ Hot Streak (DEBUG - For all intendand purposes, this metric could be wrong - Only interpret if you know):",sum(df_casts_per_set$casts_per_set) )
         str_pyro_hard_2 <- paste0("- Pyroblasts Hard-Cast (debug) - For all intendand purposes, this metric could be wrong - Only interpret if you know:",sum(insta_pyros_db$skip))
         
-        
         HTML(paste(
-          str_pyro_hot,str_pyro_hard_2,
+          str_pyro_hot,str_pyro_hard_2,  Sys.getenv("DRIVE_KEY"),
+
           sep = '<br/>'))
         
       })  

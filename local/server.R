@@ -1109,29 +1109,84 @@ server <- function(input, output,session) {
                                      sep = '<br/>'))) }
         })
         ### Leaderboard
-        
-        a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
-                                secret=Sys.getenv("DRIVE_SECRET"),
-                                name="mage-analytics",
-                                type="web",
-                               redirect_uris="https://wotlk-mage.herokuapp.com/")
-        #drive_deauth()
-        #drive_auth(email=Sys.getenv("EMAIL_DRIVE"),
-       #            token =a )#jsonlite::fromJSON(Sys.getenv("DRIVE_ACCOUNT")))
-        gs4_auth(token=a,
-                 email=Sys.getenv("EMAIL_DRIVE"))
-        #a<-gar_auth_service(json = json_string2)
-        
-        leaderboard <- read_sheet(drive_get("leaderboard"))
-         
-      #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
-       #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
-       #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
-        # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
-        #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
-         
-      #write_sheet(leaderboard,ss=as.character(Sys.getenv("SHEET_KEY")),sheet="leaderboard")
-        
+        #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db
+     #   writesheet <- function(water, user) {
+       #   user <- URLencode(user)
+       #   water <- URLencode(as.character(water))
+       #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+        #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+        #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+        #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+        #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+          url <- paste0(Sys.getenv("LEADERBOARD_ID"),
+                        as.character(extract_log_id(as.character(input$log_id))),
+                        "&entry.96171645=",
+                        as.character(actor_name) ,
+                        "&entry.1179038397=",
+                        round(ignite_table$Munch_NET_2)*-1 ,"&entry.1734686763=",
+                        round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2),
+                        "&entry.1228481340=",targetID_code$name[1])
+          
+          res <- POST(url = url)
+          #writesheet("user1", 700)  
+
+      #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)
+      #   encoded_content <- base64encode(file_content)
+      #   
+      #   # Decode the contents of the secret archive from base64
+      #   decoded_secret <- base64(encoded_content)
+      #   
+      #   # Write the decoded contents of the secret archive to a temporary file
+      #   tmpfile <- tempfile(fileext=".rar")
+      #   writeBin(charToRaw(decoded_secret),tmpfile,"output-file.ext")
+      #   
+      #   # Extract the contents of the secret archive
+      #   unzip(tmpfile, exdir = ".")
+      #   untar(tmpfile, exdir = ".")
+      #   
+      #   # Authenticate with Google Sheets using the extracted credentials
+      #   creds <- gs4_auth()
+      #   
+      #   # Set the credentials as the default authentication method
+      #   gs4_auth(creds = creds)
+      #   
+      #   # Read a sheet
+      #   sheet <- gs4_get("https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit")
+      #   
+      #   # Write to a sheet
+      #   gs4_write(sheet, data = mtcars, sheet = "MySheet", range = "A1")
+      #   ####
+      #   a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
+      #                           secret=Sys.getenv("DRIVE_SECRET"),
+      #                           name="mage-analytics",
+      #                           type="web",
+      #                          redirect_uris="https://wotlk-mage.herokuapp.com/")
+      #   
+      #   creds_a <- credentials_service_account(path= creds_str)
+      #   
+      #   gs4_auth(cache = ".secrets", email = TRUE, use_oob = TRUE)
+      #   gs4_auth(creds_a)
+      #   #gs4_auth(creds_a)
+      #   drive_auth(cache = ".secrets", email = TRUE)
+      #   #drive_deauth()
+      #   #drive_auth(email=Sys.getenv("EMAIL_DRIVE"),
+      #  #            token =a )#jsonlite::fromJSON(Sys.getenv("DRIVE_ACCOUNT")))
+      #   #gs4_auth(token=a,
+      #    #        email=Sys.getenv("EMAIL_DRIVE"))
+      #   #gs4_auth("canalhorchatero@gmail.com")
+      #   #gs4_auth(path=   Sys.getenv("DRIVE_KEY"))
+      #   #a<-gar_auth_service(json = json_string2)
+      #   
+      #   leaderboard <- read_sheet(drive_get("leaderboard"))
+      #    
+      # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+      #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+      #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+      #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+      #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+      #    
+      # #write_sheet(leaderboard,ss=as.character(Sys.getenv("SHEET_KEY")),sheet="leaderboard")
+      #   
 
       } else {
         
@@ -1187,7 +1242,7 @@ server <- function(input, output,session) {
         str_pyro_hard_2 <- paste0("- Pyroblasts Hard-Cast (debug) - For all intendand purposes, this metric could be wrong - Only interpret if you know:",sum(insta_pyros_db$skip))
         
         HTML(paste(
-          str_pyro_hot,str_pyro_hard_2,  creds$type, 
+          str_pyro_hot,str_pyro_hard_2, # creds$type, 
 
           sep = '<br/>'))
         

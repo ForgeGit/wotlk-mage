@@ -1108,15 +1108,12 @@ server <- function(input, output,session) {
           } else { HTML(paste(paste0("",
                                      sep = '<br/>'))) }
         })
-        
         ### Leaderboard
-        creds <- jsonlite::fromJSON(Sys.getenv("DRIVE_KEY"))
+        a<- gargle_oauth_client_from_json(Sys.getenv("DRIVE_KEY"))
+        drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
+        gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = a)
+        #a<-gar_auth_service(json = json_string2)
         
-        gs4_deauth()    
-        gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
-        drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
-
-   
          leaderboard <- read_sheet(drive_get("leaderboard"))
          
          leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  

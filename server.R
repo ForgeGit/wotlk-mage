@@ -1110,18 +1110,19 @@ server <- function(input, output,session) {
         })
         ### Leaderboard
         
-      #  a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
-                #                secret=Sys.getenv("DRIVE_SECRET"),
-                #                name="mage-analytics",
-             #                   type="web",
-               #                 redirect_uris="https://wotlk-mage.herokuapp.com/")
+        a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
+                                secret=Sys.getenv("DRIVE_SECRET"),
+                                name="mage-analytics",
+                                type="web",
+                               redirect_uris="https://wotlk-mage.herokuapp.com/")
         #drive_deauth()
         #drive_auth(email=Sys.getenv("EMAIL_DRIVE"),
        #            token =a )#jsonlite::fromJSON(Sys.getenv("DRIVE_ACCOUNT")))
-       # gs4_auth(drive_token())
+        gs4_auth(token=a,
+                 email=Sys.getenv("EMAIL_DRIVE"))
         #a<-gar_auth_service(json = json_string2)
         
-      #   leaderboard <- read_sheet(drive_get("leaderboard"))
+        leaderboard <- read_sheet(drive_get("leaderboard"))
          
       #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
        #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 

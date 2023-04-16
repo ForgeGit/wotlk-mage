@@ -1109,13 +1109,13 @@ server <- function(input, output,session) {
                                      sep = '<br/>'))) }
         })
         
-        tryCatch({
         ### Leaderboard
         creds <- jsonlite::fromJSON(Sys.getenv("DRIVE_KEY"))
-        options(googlesheets4.httr_oauth_cache = TRUE)
+        
+        gs4_deauth()    
         gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
         drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
-        })
+
    
          leaderboard <- read_sheet(drive_get("leaderboard"))
          

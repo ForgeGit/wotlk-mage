@@ -1127,7 +1127,7 @@ server <- function(input, output,session) {
                         round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2),
                         "&entry.1228481340=",targetID_code$name[1])
           
-          res <- POST(url = url)
+         # res <- POST(url = url)
           #writesheet("user1", 700)  
 
       #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)
@@ -1242,7 +1242,7 @@ server <- function(input, output,session) {
         str_pyro_hard_2 <- paste0("- Pyroblasts Hard-Cast (debug) - For all intendand purposes, this metric could be wrong - Only interpret if you know:",sum(insta_pyros_db$skip))
         
         HTML(paste(
-          str_pyro_hot,str_pyro_hard_2, # creds$type, 
+          str_pyro_hot,str_pyro_hard_2,url, # creds$type, 
 
           sep = '<br/>'))
         

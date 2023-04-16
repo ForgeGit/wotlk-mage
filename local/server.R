@@ -1115,9 +1115,9 @@ server <- function(input, output,session) {
         options(googlesheets4.httr_oauth_cache = TRUE)
         gs4_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
         drive_auth(email=Sys.getenv("EMAIL_DRIVE"),token = creds)
-        # 
-        # leaderboard <- read_sheet(drive_get("leaderboard"))
-        # 
+         
+         leaderboard <- read_sheet(drive_get("leaderboard"))
+         
         # leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
         # leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
         # leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
@@ -1181,7 +1181,7 @@ server <- function(input, output,session) {
         str_pyro_hard_2 <- paste0("- Pyroblasts Hard-Cast (debug) - For all intendand purposes, this metric could be wrong - Only interpret if you know:",sum(insta_pyros_db$skip))
         
         HTML(paste(
-          str_pyro_hot,str_pyro_hard_2,  Sys.getenv("DRIVE_KEY"),
+          str_pyro_hot,str_pyro_hard_2,  leaderboard$log[1], 
 
           sep = '<br/>'))
         

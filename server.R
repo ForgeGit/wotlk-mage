@@ -1247,7 +1247,7 @@ server <- function(input, output,session) {
         str_pyro_hard_2 <- paste0("- Pyroblasts Hard-Cast (debug) - For all intendand purposes, this metric could be wrong - Only interpret if you know:",sum(insta_pyros_db$skip))
         
         HTML(paste(
-          str_pyro_hot,str_pyro_hard_2,url, # creds$type, 
+          str_pyro_hot,str_pyro_hard_2,#url, # creds$type, 
 
           sep = '<br/>'))
         

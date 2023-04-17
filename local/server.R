@@ -1239,7 +1239,7 @@ server <- function(input, output,session) {
         })
         
         ###### Leaderboard ####
-        if(actor_name!="Dr. Boom"){
+        if(fight_name != "Dr. Boom"){
         #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
         #   water <- URLencode(as.character(water))
         #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
@@ -1279,6 +1279,7 @@ server <- function(input, output,session) {
         
         
         res <- POST(url = url)
+        
         }
         #writesheet("user1", 700)  
         

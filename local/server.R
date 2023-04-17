@@ -1022,9 +1022,11 @@ server <- function(input, output,session) {
               
             }
           }else if(sub_spec=="FFB") {
-           # str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. If you're playing FFB put everything you think you now about ignite munching in a box and close the lid and slide it under your bed.<sup>amyy#7377</sup></font>")
-            str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. </font>")
-            
+            str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. If you're playing FFB put everything you think you know about ignite munching in a box and close the lid and slide it under your bed.<sup>amyy#7377</sup></font>")
+            #str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. </font>")
+            str_delay_5 <- paste0("- Delays at 0ms: ", 
+                                  nrow(casts_fb_pyro %>% 
+                                         filter(delay == 0))) 
           } else {
             str_delay_5="" 
             str_alert=""}

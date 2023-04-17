@@ -439,15 +439,58 @@ server <- function(input, output,session) {
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   
-  
+  #### CHANGELOG####
   output$Changelog <- renderUI({
     
-    HTML(paste(paste0("Change log:"),
-               paste0("- Change log released poggers"),
-                      sep = '<br/>'))
+    HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
+               paste0("- 17/04/2023: Change log released."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tabs included."),
+               paste0("- 16/04/2023: Notifications for unusual values. (See FAQ)"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Algalon note: Black hole causes 'munching'."),
+               paste0("- 15/04/2023: <a href='https://www.youtube.com/watch?v=baC6QJW1H4s&t=259s'>Crateria (Human Bald Mage) video on how to use the Tool + Ignite Munching news!</a>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pyroblast Metrics added."),
+               paste0("- 14/04/2023: Dark Mode enabled as default."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pyroblast hard-cast detection."),
+               paste0("- 13/04/2023: Dr. Boom support and Freya."),
+               paste0("- 12/04/2023: Fireball and Pyroblast delay estimations."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Living Bomb clipping detection."),
+               paste0("- 11/04/2023: First release."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Munchalyzer."),
+               sep = '<br/>'))
     
     
 })
+  #### FAQ ####
+  output$FAQ <- renderUI({
+    
+    HTML(paste(paste0("<h5><b>Frequently Asked Questions<sup>Is the app dumb? Or is it me?</sup>:</b></h5>"),
+               
+               paste0("<b>- Color scheme:</b>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#54A5BE\"> Information text.</font>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#D78613\"> There is something weird. It is probably ok, but it could be worth looking into.<sup>*</sup></font>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#BE5350\"> This needs your attention. Very likely, you are doing something wrong.<sup>*</sup></font>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#61B661\"> Is it luck? Is it skill? I can't tell, but you did something right.</font>"),
+               '<br/>',
+               paste0("<b>- What is Vomit/Munch?:</b>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; The most simple answer is that both are bugs associated with Ignite, they happen under certain conditions, and as a TTW mage you can mitigate the negatives effects of munching."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; <a href='https://github.com/ForgeGit/ignite_wotlk'> If you want further details you can click here.</a>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; As of 10/04/2023 (dd/mm/yyyy) <a href='https://us.forums.blizzard.com/en/wow/t/wotlk-stealth-change-to-feral/1566375/5'>Blizzard announced they would adjust ignite to 'fix' munching.</a>"),
+               '<br/>',
+               paste0("<b>- How do I fix munching?:</b>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; You can't fix it, but you can use some workarounds with the use of Weakauras and macros to minimize its effects."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Consider asking at the <a href='https://github.com/ForgeGit/ignite_wotlk'>Mage Discord.</a> for a proper explanation on the available options. "),
+               '<br/>',
+               
+               paste0("<b>- Can I use this to test at Dr. Boom/Training Dummies?:</b>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Dr. Boom testing is enabled. If Dr. Boom is present in your log, it should allow you to select a timestamp as a fight."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; I do not have plans at the moment to include Dummies due to their buggy nature and weird inconsistent results in the past."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; <i>Note: Weakauras, addons, or some spell interactions could work differently in instances vs open-world. Consider this when testing @ Dr. Boom</i>"),
+               '<br/>',
+               paste0("*<i>Do you think this is a mistake? Contact me on Discord at Forge#0001</i>."),
+               sep = '<br/>'))
+    
+    
+  })
   
   
   #### Style settings #####

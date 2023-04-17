@@ -141,43 +141,55 @@ ui <- fluidPage(
       br(),
       "Consider a donation:",
       br(),
-      tags$a(href= "https://ko-fi.com/forge", "Buy me a covfefe! (and help me pay for the app hosting)"),
-      br(),
-      br(),
-      tags$a(href= "https://github.com/ForgeGit/ignite_wotlk", "FAQ: Munching? Vomit? What?")
-      
+      tags$a(href= "https://ko-fi.com/forge", "Buy me a covfefe! (and help me maintain the app and hosting)"),
+
     ),
     mainPanel(
-      fluidRow(
-        column(width = 12, uiOutput("summary_header"))
-      ),
-      br(),
-      
-      fluidRow(
-        column(width = 5, withSpinner(uiOutput("summary_ignite_1"),color="red")),
-        column(width = 4, uiOutput("summary_ignite_2"))
-      ),
-      br(),
-      fluidRow(
-        column(width = 5, uiOutput("cast_metrics_1")),
-        column(width = 3, uiOutput("cast_metrics_2"))
-      ),
-      
-      fluidRow(
-        column(width = 5, uiOutput("cast_delays_1")),
-        column(width = 3, uiOutput("cast_delays_2"))
-      ),
-      fluidRow(
-        column(width = 7, uiOutput("extra_algalon"))
-      ),
-      fluidRow(
-        column(width = 12,uiOutput("caption_1"))
-      ),
-      fluidRow(
-        column(width = 12, dataTableOutput("table2"))
-      ),
-      fluidRow(
-        column(width = 12, uiOutput("extra_else"))
+      tabsetPanel(type = "tabs",
+                  tabPanel("Metrics",
+                  
+                  
+                  fluidRow(
+                    column(width = 12, uiOutput("summary_header"))
+                  ),
+                  br(),
+                  
+                  fluidRow(
+                    column(width = 5, withSpinner(uiOutput("summary_ignite_1"),color="red")),
+                    column(width = 4, uiOutput("summary_ignite_2"))
+                  ),
+                  br(),
+                  fluidRow(
+                    column(width = 5, uiOutput("cast_metrics_1")),
+                    column(width = 3, uiOutput("cast_metrics_2"))
+                  ),
+                  
+                  fluidRow(
+                    column(width = 5, uiOutput("cast_delays_1")),
+                    column(width = 3, uiOutput("cast_delays_2"))
+                  ),
+                  fluidRow(
+                    column(width = 7, uiOutput("extra_algalon"))
+                  ),
+                  fluidRow(
+                    column(width = 12,uiOutput("caption_1"))
+                  ),
+                  fluidRow(
+                    column(width = 12, dataTableOutput("table2"))
+                  ),
+                  fluidRow(
+                    column(width = 12, uiOutput("extra_else"))
+                  )
+                  ),
+                  tabPanel("Changelog",
+                           uiOutput("Changelog")
+                  ),
+                  tabPanel("F.A.Q",
+                           fluidRow(
+                             column(width = 10, uiOutput("FAQ"))
+                           )
+                           
+                  )
       )
     )
   )

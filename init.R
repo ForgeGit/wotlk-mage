@@ -1,7 +1,7 @@
 
 my_packages = c("jsonlite", "httr","dplyr","tidyr",
                 "readr","DT","shinythemes","googledrive",
-                "googlesheets4","shinycssloaders")#,"gargle")
+                "googlesheets4","shinycssloaders","stringr")#,"gargle")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {

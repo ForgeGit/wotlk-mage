@@ -1,5 +1,7 @@
 
 #########################################################################################
+options(scipen = 100)
+
 boss_list <- c(757, #Alga
                752, #Thorim
                755, #Vezax
@@ -435,7 +437,7 @@ extract_log_id <- function(log_input) {
 
 server <- function(input, output,session) {
   
-  output$summary_ignite <- renderUI({ HTML(paste(paste0("")))})
+  output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   
   #### Style settings #####
   
@@ -597,7 +599,13 @@ server <- function(input, output,session) {
   
   observeEvent(input$submit_char_id, {
     
-    output$summary_ignite <- renderUI({ HTML(paste(paste0("")))})
+    output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
+    output$summary_ignite_2 <- renderUI({ HTML(paste(paste0("")))})
+    output$cast_delays_1 <- renderUI({ HTML(paste(paste0("")))})
+    output$cast_delays_2 <- renderUI({ HTML(paste(paste0("")))})
+    output$cast_metrics_1 <- renderUI({ HTML(paste(paste0("")))})
+    output$cast_metrics_2 <- renderUI({ HTML(paste(paste0("")))})
+    output$extra_algalon <- renderUI({ HTML(paste(paste0("")))})
     
     ##### + Parse fight ID ####
     
@@ -741,6 +749,12 @@ server <- function(input, output,session) {
           ignite_summary()
         
         
+        ignite_table_debug$MARKED <- ifelse(str_detect(ignite_table_debug$abilityGameID, "^\\d+$"), "MARKED", "NOT MARKED")
+        
+        Marked_Data <- subset(ignite_table_debug, MARKED == "MARKED")
+        
+        
+        
         #### Debuff LB extraction ####
         debuff_table <- WCL_API2_request(
           sprintf(request_debuff, ## Debuffs
@@ -875,7 +889,20 @@ server <- function(input, output,session) {
         
         
         ### Render output ######
-         
+        ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
+        
+        n_total_pyros<- round(as.numeric(nrow(pyro_n)),2)
+        n_total_pyro_hard_cast <- round(as.numeric(nrow(pyro_hard_cast)),2)
+        n_total_hot_streak <- round(as.numeric(nrow(hot_streak_n)),2)
+        
+        n_insta_pyros <- n_total_pyros-n_total_pyro_hard_cast
+        
+        
+        boss_name_singular <- sapply(strsplit(targetID_code$name[1], " "), `[`, 1) 
+        
+        
+        Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
+        
         ####  Header   ####
         output$summary_header <- renderUI({
           
@@ -887,11 +914,9 @@ server <- function(input, output,session) {
         
         ####  Ignite Metrics left  ####  
         
-        output$summary_ignite <- renderUI({
+        output$summary_ignite_1 <- renderUI({
           
-          
-          Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
-          
+
           str1 <- paste0( "- Expected ignite damage<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
           str2 <- paste0( "- Actual ignite damage dealt<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
           str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
@@ -915,13 +940,13 @@ server <- function(input, output,session) {
           
           ### Ignite ###
           
-          str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
+          ######### TBD
+          #str_min <- paste0( "- Lowest ignite tick: ",  prettyNum((min(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           str_summ1 <- paste0("- Expected ignite damage before target death<sup>*</sup>: ",
                               prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
                               " - ",  
                               prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
                               " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
-          ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
           
           HTML(paste(
             paste0("<h4> <b>",ignite_img," Munching Metrics (Main Target only) </b> </h4>"),
@@ -937,9 +962,8 @@ server <- function(input, output,session) {
         
         ####  Ignite Metrics right  ####  
         
-        output$summary_ignite2 <- renderUI({
+        output$summary_ignite_2 <- renderUI({
           
-          ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
           str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
           str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
           str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
@@ -952,9 +976,10 @@ server <- function(input, output,session) {
             sep = '<br/>'))
           
         })
+
+        ####  Cast Metrics delay left  ####  
         
-        
-        output$summary_cast_1 <- renderUI({
+        output$cast_delays_1 <- renderUI({
           
           ### Delay gaps ###
           
@@ -989,12 +1014,17 @@ server <- function(input, output,session) {
                                            filter(delay == 0)),"</font>")
               str_alert <- paste0("<font color=\"#54A5BE\">Your WA or anti-munching method seems to be working.<sup>4</sup></font>")
               
-            } else {str_delay_5 <- paste0("- Delays at 0ms: ", 
-                                          nrow(casts_fb_pyro %>% 
-                                                 filter(delay == 0))) 
-            str_alert <- ""
-            
+            } else {
+              str_delay_5 <- paste0("- Delays at 0ms: ", 
+                                    nrow(casts_fb_pyro %>% 
+                                           filter(delay == 0))) 
+              str_alert <- ""
+              
             }
+          }else if(sub_spec=="FFB") {
+           # str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. If you're playing FFB put everything you think you now about ignite munching in a box and close the lid and slide it under your bed.<sup>amyy#7377</sup></font>")
+            str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. </font>")
+            
           } else {
             str_delay_5="" 
             str_alert=""}
@@ -1005,6 +1035,9 @@ server <- function(input, output,session) {
           str_delay_7 <- paste0("- Delays at >=100ms and <300ms: ",
                                 nrow(casts_fb_pyro %>% filter(delay >= 100 & delay < 300)))
           
+          str_delay_500 <- paste0("- Delays at >=300ms and <500ms: ",
+                                nrow(casts_fb_pyro %>% filter(delay >= 300 & delay < 500)))
+          
           str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
           
           casts_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_hunter_pet_turtle.jpg' height='20' width='20'/>"
@@ -1012,57 +1045,77 @@ server <- function(input, output,session) {
           
           HTML(paste(
             paste0("<h4> <b>",casts_img," Cast metrics (Main Target only)</b> </h4>"),
+            paste0("<b>Living Bomb metrics:</b>"),
+            str_lb_clip,
+            "<br/",
             paste0("<b>Ms<sup>3</sup> between Fireball and Pyroblast casts (<750ms):</b>"),
             str_delay_5,
             str_delay_6,
             str_delay_7,
+            str_delay_500,
             str_alert,
             "<br/",
-            paste0("<b>Living Bomb metrics:</b>"),
-            str_lb_clip,
             sep = '<br/>'))
           
         }) 
         
+        ####  Cast Metrics delay right summary ####  
         
-        output$summary_cast_2 <- renderUI({
+        output$cast_delays_2 <- renderUI({
           
-          ### Delay gaps ###
+        max_delay_alert<- max(casts_fb_pyro$delay,na.rm=T)  
+        
+        if(max_delay_alert>=500){
+          
+          str_delay_2 <- paste0("<font color=\"#D78613\">- Max. Delay: </font>", max_delay_alert, " ms")
+          
+        } else{ 
+          str_delay_2 <- paste0("- Max. Delay: ", max_delay_alert, " ms")
+          
+          }
+        
+        
+          
+          
           
           str_delay_1 <- paste0("- Avg. Delay: ", as.integer(mean(casts_fb_pyro$delay,na.rm=T))," ms")
-          str_delay_2 <- paste0("- Max. Delay: ", max(casts_fb_pyro$delay,na.rm=T), " ms")
+
           str_delay_3 <- paste0("- Min Delay: ", min(casts_fb_pyro$delay,na.rm=T) , " ms")
           str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts_fb_pyro))
           str_delay_5 <- paste0("- Median Delay: ", as.integer(median(casts_fb_pyro$delay,na.rm=T))," ms")
           
           
-          HTML(paste("<br/",
+          HTML(paste(paste0(""),
+                     "<br/",
+                     "<br/",
+                     "<br/",
                      "<br/",
                      "<br/",
                      str_delay_1,
-                     str_delay_2,str_delay_3,str_delay_5, str_delay_4,
-                     
+                     str_delay_2,
+                     str_delay_3,
+                     str_delay_5, 
+                     str_delay_4,
                      sep = '<br/>'))
           
           
         }) 
         
-        output$everything_else_1 <- renderUI({
+        ####  Cast Metrics Pyroblast #### 
+        
+        output$cast_metrics_1 <- renderUI({
           
           
-          
-          str_total_pyro <- paste0("- Total Pyroblasts: ", nrow(pyro_n))
-          str_insta_pyro <- paste0("- Total Insta-Pyros: ", (nrow(pyro_n)-nrow(pyro_hard_cast)))
+          str_total_pyro <- paste0("- Total Pyroblasts: ", n_total_pyros)
+          str_insta_pyro <- paste0("- Total Insta-Pyros: ", n_insta_pyros)
           
           fblast_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_fireball.jpg' height='20' width='20'/>"
           
           str_pyro_canned <- paste0("- Pyroblasts cancelled/interrupted: ",nrow(pyro_interrupt)) 
-          str_pyro_hard <- paste0("- Pyroblasts hard-cast: ",nrow(pyro_hard_cast))
-          
-          
+          str_pyro_hard <- paste0("- Pyroblasts hard-cast: ",n_total_pyro_hard_cast)
+
           
           HTML(paste(
-            "<br/",
             paste0("<h4> <b>",fblast_img," Cast Metrics (Encounter-wide, All Targets)</h4> </b>"),
             paste0("<b>Pyroblast metrics:</b>"),
             str_total_pyro,
@@ -1073,8 +1126,9 @@ server <- function(input, output,session) {
             sep = '<br/>'))
           
         })
+        ####  Main Spell metrics (FB/FFB) & Hotstreaks #### 
         
-        output$everything_else_2 <- renderUI({
+        output$cast_metrics_2 <- renderUI({
           
           
           str_fb <- paste0("- Fireball cancelled: ",nrow(fireball_interrupt)) 
@@ -1087,16 +1141,36 @@ server <- function(input, output,session) {
               }
           
           
-          str_hotstreak_n <- paste0("- # Hot Streaks (Buff): ",nrow(hot_streak_n))
-          str_hotstreak_pyro <- paste0("- # Pyros per Hot Streak: ", round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2))
-          str_4pct8 <- paste0("- # 4pcT8 Pyros: ", round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))-as.integer(nrow(hot_streak_n)), digits = 2))
+          pyros_per_hotstreak <- round(n_insta_pyros/n_total_hot_streak, digits = 2)
+          
+          ################### REVIEW ##################
+          if(pyros_per_hotstreak<1 & boss_name_singular %in% c("Vezax","Hodir","Freya")){
+            
+          str_hotstreak_pyro <- paste0("<font color=\"#D78613\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>" )
+        
+          } else if(pyros_per_hotstreak<1){
+            
+            str_hotstreak_pyro <- paste0("<font color=\"#BE5350\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>")
+            
+          } else if(pyros_per_hotstreak>2){
+            
+            str_hotstreak_pyro <- paste0("<font color=\"#61B661\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>")
+  
+          } else{
+            
+            str_hotstreak_pyro <- paste0("- # Pyros per Hot Streak: ",pyros_per_hotstreak)
+          }
+            
+          
+          str_hotstreak_n <- paste0("- # Hot Streaks (Buff): ",n_total_hot_streak)
+          str_4pct8 <- paste0("- # 4pcT8 Pyros used: ", round(n_insta_pyros-n_total_hot_streak, digits = 2))
           str_refreshpyro <- paste0("- Hot Streaks 'refreshed'<sup>5</sup>: ",nrow(hot_streak_ref))
           HTML(paste(
             "<br/",
-            "<br/",
-            paste0("<b>Other spells metrics:</b>"),
+            paste0("<b>Main spell metrics:</b>"),
             str_mainspell,
-            paste0("<b>Under testing:</b>"),
+            "<br/",
+            paste0("<b>Hot Streak:</b>"),
             str_hotstreak_n,
             str_hotstreak_pyro,
             str_4pct8,
@@ -1105,10 +1179,10 @@ server <- function(input, output,session) {
           
         }) 
         
+        ####  Caption #### 
         
-        output$everything_else_3 <- renderUI({
+        output$caption_1 <- renderUI({
           HTML(paste(
-            "<br/",
             "<br/",
             paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
             paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
@@ -1120,21 +1194,31 @@ server <- function(input, output,session) {
           
         })
         
+        ####  Alert Algalon #### 
+        
         
         output$extra_algalon <- renderUI({
-          if(targetID_code$name[1]=="Algalon the Observer"){
+          
+          
+          if(targetID_code$name[1]=="Algalon the Observer" & nrow(Marked_Data)>0 & (Munch_NET_result < 0 & Munch_NET_result<= -10)){
             
-            HTML(paste(paste0("<font color=\"#D78613\">Crits on Algalon while you are inside the black hole do NOT generate ignite - It will be considered as 'munching' in the calculation above"),
-                       "<br/",
+            HTML(paste(paste0("<font color=\"#D78613\">Crits on Algalon while you are inside the black hole do NOT generate or add towards ignite - It will be considered as 'munching' in the calculation above</font>"),
+                       paste0("<font color=\"#D78613\">There might be issues with your munching result - Try looking at them in 1-2 days and see if this note appears again. </font>"),
                        "<br/",
                        sep = '<br/>'))
+          } else if(targetID_code$name[1]=="Algalon the Observer" & (Munch_NET_result < 0 & Munch_NET_result<= -10)){
+            
+            HTML(paste(paste0("<font color=\"#D78613\">Crits on Algalon while you are inside the black hole do NOT generate or add towards ignite - It will be considered as 'munching' in the calculation above"),
+                       "<br/",
+                       sep = '<br/>')) 
+            
           } else { HTML(paste(paste0("",
                                      sep = '<br/>'))) }
         })
-        ### Leaderboard
-        #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db
-        #   writesheet <- function(water, user) {
-        #   user <- URLencode(user)
+        
+        ###### Leaderboard ####
+        
+        #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
         #   water <- URLencode(as.character(water))
         #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
         #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
@@ -1146,10 +1230,31 @@ server <- function(input, output,session) {
                       "&entry.96171645=",
                       sapply(strsplit(actor_name, " "), `[`, 1),
                       "&entry.1179038397=",
-                      round(ignite_table$Munch_NET_2)*-1 ,"&entry.1734686763=",
-                      round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2),
+                      round(ignite_table$Munch_NET_2)*-1 ,
+                      "&entry.1734686763=",
+                      round(n_insta_pyros/n_total_hot_streak, digits = 2),
                       "&entry.1228481340=",
-                      sapply(strsplit(targetID_code$name[1], " "), `[`, 1))
+                      boss_name_singular,
+                      "&entry.1629132558=",
+                      median(casts_fb_pyro$delay,na.rm=T),
+                      "&entry.1806850293=",
+                      mean(casts_fb_pyro$delay,na.rm=T),
+                      "&entry.1724070192=",
+                      nrow(debuff_table),
+                      "&entry.1899085980=",
+                      max(ignite_table_debug$igniteSUB_resist),
+                      "&entry.303429649=",
+                      round(ignite_table$Total_Ignite_Dmg_Dealt),
+                      "&entry.1911698108=",
+                      sub_spec,
+                      "&entry.1948745936=",
+                      as.numeric(nrow(Marked_Data))
+                      )
+        
+        
+        
+        #nrow(Marked_Data)
+        
         
         res <- POST(url = url)
         #writesheet("user1", 700)  
@@ -1236,7 +1341,7 @@ server <- function(input, output,session) {
     } else { 
       showModal(modalDialog(
         title = "Error 5",
-        paste0("It looks like that character has no data for that fight, or it is possible no talent data is available in the log for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
+        paste0("It looks like that character has no data for that fight, or it is possible no talent data is available in the log for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing - Analysis without talents will be available in a couple days."),
         easyClose = TRUE,
         footer = tagList(
           modalButton("OK")

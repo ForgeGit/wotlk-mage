@@ -439,6 +439,17 @@ server <- function(input, output,session) {
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   
+  
+  output$Changelog <- renderUI({
+    
+    HTML(paste(paste0("Change log:"),
+               paste0("- Change log released poggers"),
+                      sep = '<br/>'))
+    
+    
+})
+  
+  
   #### Style settings #####
   
   tags$style(HTML("
@@ -1204,22 +1215,31 @@ server <- function(input, output,session) {
           
           if(targetID_code$name[1]=="Algalon the Observer" & nrow(Marked_Data)>0 & (Munch_NET_result < 0 & Munch_NET_result<= -10)){
             
-            HTML(paste(paste0("<font color=\"#D78613\">Crits on Algalon while you are inside the black hole do NOT generate or add towards ignite - It will be considered as 'munching' in the calculation above</font>"),
-                       paste0("<font color=\"#D78613\">There might be issues with your munching result - Try looking at them in 1-2 days and see if this note appears again. </font>"),
+            HTML(paste("<br/",paste0("Notes:"),
+                       paste0("<font color=\"#D78613\">- Crits on Algalon while you are inside the black hole do NOT generate or add towards ignite - It will be considered as 'munching' in the calculation above</font>"),
+                       paste0("<font color=\"#D78613\">- There might be issues with your munching result - Try looking at them in 1-2 days and see if this note appears again. </font>"),
                        "<br/",
                        sep = '<br/>'))
           } else if(targetID_code$name[1]=="Algalon the Observer" & (Munch_NET_result < 0 & Munch_NET_result<= -10)){
             
-            HTML(paste(paste0("<font color=\"#D78613\">Crits on Algalon while you are inside the black hole do NOT generate or add towards ignite - It will be considered as 'munching' in the calculation above"),
+            HTML(paste("<br/",paste0("Notes:"),
+                       paste0("<font color=\"#D78613\">- Crits on Algalon while you are inside the black hole do NOT generate or add towards ignite - It will be considered as 'munching' in the calculation above"),
                        "<br/",
                        sep = '<br/>')) 
             
-          } else { HTML(paste(paste0("",
-                                     sep = '<br/>'))) }
+          } else  if(nrow(Marked_Data)>0){
+            HTML(paste("<br/",paste0("Notes:"),
+                       paste0("<font color=\"#D78613\">- There might be issues with your munching result - Try looking at them in 1-2 days and see if this note appears again. </font>"),
+                       "<br/",
+                       sep = '<br/>'))
+            
+          } else { 
+            HTML(paste(paste0("",
+                              sep = '<br/>'))) }
         })
         
         ###### Leaderboard ####
-        
+        if(actor_name!="Dr. Boom"){
         #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
         #   water <- URLencode(as.character(water))
         #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
@@ -1258,7 +1278,7 @@ server <- function(input, output,session) {
         #nrow(Marked_Data)
         
         
-        res <- POST(url = url)
+        res <- POST(url = url)}
         #writesheet("user1", 700)  
         
         #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)

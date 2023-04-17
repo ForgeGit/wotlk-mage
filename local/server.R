@@ -1067,7 +1067,7 @@ server <- function(input, output,session) {
         
         if(max_delay_alert>=500){
           
-          str_delay_2 <- paste0("<font color=\"#D78613\">- Max. Delay: </font>", max_delay_alert, " ms")
+          str_delay_2 <- paste0("<font color=\"#D78613\">- Max. Delay:", max_delay_alert, " ms</font><sup>High</sup>")
           
         } else{ 
           str_delay_2 <- paste0("- Max. Delay: ", max_delay_alert, " ms")

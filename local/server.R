@@ -217,7 +217,7 @@ spell_filter <- c(1,60488,5019,# necromatic power and misc shoot
 )
 
 
-#########################################################################################
+#################################Cleaning########################################################
 
 
 ignite_cleaning <- function(x) {
@@ -383,7 +383,7 @@ ignite_cleaning <- function(x) {
 }
 
 
-#########################################################################################
+#################################Summary########################################################
 
 
 ignite_summary <- function(x) {
@@ -446,7 +446,7 @@ server <- function(input, output,session) {
     }
   "))
   
-  #### Submit log ID (Prep) ####
+  #### STEP 1: Submit log ID (Prep) ####
   
   ##### + Actors list ######
   
@@ -526,7 +526,7 @@ server <- function(input, output,session) {
     
   })
   
-  ### Submit log ID (display) ####
+  ### STEP 1.5: Submit log ID (display) ####
   
   observeEvent(input$submit_log_id, {
     
@@ -599,7 +599,8 @@ server <- function(input, output,session) {
     
     output$summary_ignite <- renderUI({ HTML(paste(paste0("")))})
     
-    ## Fight and Actor IDs
+    ##### + Parse fight ID ####
+    
     fight_name <- input$fight
     
     if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
@@ -614,6 +615,7 @@ server <- function(input, output,session) {
       fight_temp <- parse_number(input$fight)
     }
     
+    ##### + Parse actor ID ####
     
     actor_name <- input$character
     
@@ -630,7 +632,7 @@ server <- function(input, output,session) {
     }
     
     
-    ### Spec detection
+    ####+ Spec detection ####
     
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
@@ -659,14 +661,17 @@ server <- function(input, output,session) {
     } else{spec <- "No Spec"}
     
     
-    ## Fire mages only from here onward
-    ## Have to change for frost ignite spec
+   
     
+    #### Fire mages ####
+    # Fire mages only from here onward
+    # Have to change for frost ignite spec
     if(spec=="Fire" |  any(actors()$name %in% c("Dr. Boom"))==TRUE ){
       
       
-      ### Targets detection
+      ###### Targets detection ####
       
+       ####### Dr. Boom (again) ####
       if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
         fight_name="Dr. Boom"
       }
@@ -687,7 +692,7 @@ server <- function(input, output,session) {
                      npc_exclusions)) %>% ## Sometimes, "Hodir" and "Hodir's Wrath" exist. We want the wrath away.
         select(id,name) 
       
-      ## Sub-spec detection
+      #### Sub-spec detection ####
       if(spec!="No Spec"){
         
         sub_spec <- ifelse(spec_main$arcane_tree[1]>spec_main$frost_tree[1],
@@ -695,8 +700,7 @@ server <- function(input, output,session) {
                            ifelse(spec_main$frost_tree[1]>spec_main$arcane_tree[1],"FFB",
                                   "Error - Contact Forge#0001"))
         
-        ## Image for spec
-        spec_image <- ifelse(sub_spec=="TTW",
+        spec_image <- ifelse(sub_spec=="TTW", # Image for spec
                              "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_flamebolt.jpg' height='25' width='25'/>",
                              ifelse(sub_spec=="FFB",
                                     "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
@@ -705,9 +709,9 @@ server <- function(input, output,session) {
         sub_spec <- spec   
         spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
       }
-      ### Damage and casts extraction
       
-      
+      #### + All casts extraction ####
+    
       casts <- WCL_API2_request(sprintf(request_cast, 
                                         as.character(extract_log_id(as.character(input$log_id))), 
                                         as.numeric(fight_temp), 
@@ -719,10 +723,12 @@ server <- function(input, output,session) {
       #                               as.numeric(targetID_code$id[1])
       #                               )
       #                             )$data$reportData$report$events$data
-      # 
       
       
-      damage <- casts %>% filter(type=="damage" & targetID==as.numeric(targetID_code$id[1]))
+      #### Damage (Main Target only) ####
+      damage <- casts %>% 
+        filter(type=="damage" & 
+                 targetID==as.numeric(targetID_code$id[1]))
       
       
       if(length(damage)!=0){
@@ -735,7 +741,7 @@ server <- function(input, output,session) {
           ignite_summary()
         
         
-        ### Debuff LB extraction
+        #### Debuff LB extraction ####
         debuff_table <- WCL_API2_request(
           sprintf(request_debuff, ## Debuffs
                   as.character(extract_log_id(as.character(input$log_id))),  ## Log
@@ -762,7 +768,7 @@ server <- function(input, output,session) {
           mutate(delay = timestamp-lag(timestamp)) %>%
           filter(delay<750)
         
-        ## Pyroblasts cancelled/interrupted
+        ######## Pyroblasts cancelled/interrupted #######
         
         pyro_interrupt <- casts %>% 
           filter(abilityGameID==42891 & 
@@ -775,7 +781,7 @@ server <- function(input, output,session) {
                                          "Interrupted","OK")) %>% 
           filter(flag_interrupt=="Interrupted")
         
-        ## Pyroblasts hard-casted
+        ######## Pyroblasts hard-casted #######
         
         pyro_hard_cast <- casts %>% 
           filter(abilityGameID==42891 & 
@@ -790,14 +796,14 @@ server <- function(input, output,session) {
           ) %>% 
           filter(cast_time>500)
         
-        ## Pyroblasts count
+        ######## Pyroblasts count #######
         
         pyro_n <- casts %>% 
           filter(abilityGameID==42891 & 
                    type=="cast") 
         
         
-        ## Fireball cancelled/interrupted
+        ######## Fireball cancelled/interrupted  #######
         
         fireball_interrupt <- casts %>% 
           filter(abilityGameID==42833 & 
@@ -809,7 +815,7 @@ server <- function(input, output,session) {
                                            type=="begincast",
                                          "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
         
-        ## FFB cancelled/interrupted
+        ######## FFB cancelled/interrupted  #######
         
         frostfirebolt_interrupt <- casts %>% 
           filter(abilityGameID==47610 & 
@@ -868,7 +874,9 @@ server <- function(input, output,session) {
         
         
         
-        ## Render output
+        ### Render output ######
+         
+        ####  Header   ####
         output$summary_header <- renderUI({
           
           HTML(paste(paste0("<h3> Metrics for ",actor_name,
@@ -877,9 +885,10 @@ server <- function(input, output,session) {
                      sep = '<br/>'))
         })
         
+        ####  Ignite Metrics left  ####  
+        
         output$summary_ignite <- renderUI({
           
-          ### Munching ###
           
           Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
           
@@ -912,12 +921,8 @@ server <- function(input, output,session) {
                               " - ",  
                               prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
                               " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
-          
-          
-          
           ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
           
-          ## Final format
           HTML(paste(
             paste0("<h4> <b>",ignite_img," Munching Metrics (Main Target only) </b> </h4>"),
             str5,
@@ -930,7 +935,10 @@ server <- function(input, output,session) {
           
         })
         
+        ####  Ignite Metrics right  ####  
+        
         output$summary_ignite2 <- renderUI({
+          
           ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
           str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
           str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
@@ -1171,7 +1179,7 @@ server <- function(input, output,session) {
         #   
         #   # Write to a sheet
         #   gs4_write(sheet, data = mtcars, sheet = "MySheet", range = "A1")
-        #   ####
+        #   
         #   a<- gargle_oauth_client(id=Sys.getenv("DRIVE_ID"),
         #                           secret=Sys.getenv("DRIVE_SECRET"),
         #                           name="mage-analytics",
@@ -1216,7 +1224,7 @@ server <- function(input, output,session) {
     } else if(spec!="No Spec"){
       
       showModal(modalDialog(
-        title = "Error 3",
+        title = "Error 4",
         paste0("It looks like that character is ",spec," Mage on that log. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
         easyClose = TRUE,
         footer = tagList(
@@ -1227,7 +1235,7 @@ server <- function(input, output,session) {
       
     } else { 
       showModal(modalDialog(
-        title = "Error 4",
+        title = "Error 5",
         paste0("It looks like that character has no data for that fight, or it is possible no talent data is available in the log for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
         easyClose = TRUE,
         footer = tagList(
@@ -1236,9 +1244,10 @@ server <- function(input, output,session) {
       ))
     }
     
+    ### STEP 3: Table debug ####
+
     observeEvent(input$debug_id, {
-      
-      
+    
       output$table2 <- renderDataTable({
         
         ignite_table_debug %>% 
@@ -1248,8 +1257,6 @@ server <- function(input, output,session) {
                  ability = abilityGameID,
                  unm_amo = unmitigatedAmount,
                  time2=timestamp_2)
-        
-        
       }) 
       
       output$extra_else <- renderUI({
@@ -1259,19 +1266,12 @@ server <- function(input, output,session) {
         
         HTML(paste(
           str_pyro_hot,str_pyro_hard_2,#url, # creds$type, 
-          
           sep = '<br/>'))
         
       })  
       
-      
-      
-      
-    }) 
+    }) # End of Step 3 
     
-  })
+  }) # End of Step 2
   
-  
-  
-  
-}
+} # END OF SERVER

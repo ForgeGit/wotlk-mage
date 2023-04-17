@@ -1188,7 +1188,7 @@ server <- function(input, output,session) {
             paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
             paste0("<i><sup>3</sup> Milliseconds; 1,000 milliseconds = 1 second.</i>"), 
             paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left)</i>"), 
-            paste0("<i><sup>5</sup> Hot Streaks not fully used. Not fully consumed before it got 'refreshed'</i>"), 
+            paste0("<i><sup>5</sup> Hot Streaks not fully used. Not fully consumed before it got 'refreshed'. i.e. You got hot streak while you had hot streak.</i>"), 
             paste0("<i><sup>*</sup> This numbers are BEFORE partial resists.</i>"), 
             sep = '<br/>'))
           

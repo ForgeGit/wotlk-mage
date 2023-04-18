@@ -745,7 +745,7 @@ server <- function(input, output,session) {
                permanentEnchant = as.character(permanentEnchant),
                permanentEnchant= if_else(icon=="helmet" & is.na(permanentEnchant), "helmet",permanentEnchant),
                permanentEnchant= if_else(icon=="shoulder" & is.na(permanentEnchant), "shoulder",permanentEnchant),
-               permanentEnchant= if_else(icon=="chest" & is.na(permanentEnchant), "chest",permanentEnchant),
+               permanentEnchant= if_else(icon=="chest" & itemLevel>=150 & is.na(permanentEnchant), "chest",permanentEnchant),
                permanentEnchant= if_else(icon=="pants" & is.na(permanentEnchant), "pants",permanentEnchant),
                permanentEnchant= if_else(icon=="boots" & is.na(permanentEnchant), "boots",permanentEnchant),
                permanentEnchant= if_else(icon=="gauntlets" & is.na(permanentEnchant), "gloves",permanentEnchant),

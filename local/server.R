@@ -447,6 +447,7 @@ server <- function(input, output,session) {
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Resource metrics added (HP/Mana/SP)."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;App supports 'no spec' on logs as long as you had 1 ignite tick on target."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='https://ko-fi.com/home/coffeeshop?ReturnUrl=/&txid=e01ae145-0a7a-4d49-8c3a-457b95d3de3e'>Added support for 'Frostnite' spec (Frost spec w/ ignite). Thanks to a donation.</a>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fixed very rare bug were a very specific selection of logs would not work."),
                paste0("- 17/04/2023: Change log released."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tabs included."),
                paste0("- 16/04/2023: Notifications for unusual values. (See FAQ)"),
@@ -732,10 +733,13 @@ server <- function(input, output,session) {
     pre_combatant_trigger <- any(grepl("combatantinfo", casts$type))
     ignite_pressence <- any(grepl(12654, casts$abilityGameID))
     
+     
+    
     if(pre_combatant_trigger==F & doctor_pressence()=="FALSE"){
  
       
       ####+ Spec detection ####
+       
       
       spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
       
@@ -748,16 +752,18 @@ server <- function(input, output,session) {
  
       
     } else if (pre_combatant_trigger==T){
+      
       spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
       combatinfo <- casts[grepl("combatantinfo", casts$type),]
+      
     } else { 
       combatinfo <- vector(length = 0)
       }
-    
 
+     
     if(length(combatinfo)!=0){ 
     
-      spec_temp <-  combatinfo[[32]][[1]][[1]]
+      spec_temp <-  combatinfo$talents[[1]][[1]]
       
       spec$arcane_tree[1] = spec_temp[1]
       spec$fire_tree[1] = spec_temp[2]
@@ -775,6 +781,7 @@ server <- function(input, output,session) {
       
     } else {
  
+       
       
       spec <- "No Spec"
       
@@ -793,6 +800,7 @@ server <- function(input, output,session) {
         filter(type=="combatantinfo") %>% 
         select(gear) %>% 
         pull(.) 
+       
       
       
       enchants <- enchants[[1]] %>% 
@@ -815,6 +823,7 @@ server <- function(input, output,session) {
       } else { enchants = "NO DATA"}
       
       ###### Targets detection ####
+       
       
       ####### Dr. Boom (again) ####
       if(doctor_pressence()=="TRUE"){
@@ -836,7 +845,7 @@ server <- function(input, output,session) {
                  !(name %in% ## Names are searched based on "Single Names" - Using "Algalon" will keep "Algalon the Observer".
                      npc_exclusions)) %>% ## Sometimes, "Hodir" and "Hodir's Wrath" exist. We want the wrath away.
         select(id,name) 
-      
+       
       #### Sub-spec detection ####
       if(spec!="No Spec"){
         
@@ -888,7 +897,7 @@ server <- function(input, output,session) {
         Marked_Data <- subset(ignite_table_debug, MARKED == "MARKED")
         
         
-        
+         
         #### Debuff LB extraction ####
         debuff_table <- WCL_API2_request(
           sprintf(request_debuff, ## Debuffs
@@ -950,7 +959,7 @@ server <- function(input, output,session) {
           filter(abilityGameID==42891 & 
                    type=="cast") 
         
-        
+         
         ######## Fireball cancelled/interrupted  #######
         
         fireball_interrupt <- casts %>% 
@@ -1003,7 +1012,7 @@ server <- function(input, output,session) {
         insta_pyros_db <- left_join(insta_pyros_db, 
                                     df_casts_per_set, by = "set")
         
-        
+         
         ### Hot Streaks
         
         hot_streak_n <- casts %>% 
@@ -1054,7 +1063,7 @@ server <- function(input, output,session) {
         max_sp <- max(resources$spellPower,na.rm=T)
         mana_end <-  round(min(mana$mana_per,na.rm=T),2)*100
 
-        
+         
         #### Force Spec if needed ####
         if (spec=="No Spec" & (
           sum(
@@ -1105,7 +1114,7 @@ server <- function(input, output,session) {
           
         }
         
-        
+         
         
         ####  Ignite Metrics left  ####  
         
@@ -1154,7 +1163,7 @@ server <- function(input, output,session) {
             sep = '<br/>'))
           
         })
-        
+         
         ####  Ignite Metrics right  ####  
         
         output$summary_ignite_2 <- renderUI({

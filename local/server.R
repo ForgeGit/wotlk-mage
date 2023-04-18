@@ -873,7 +873,7 @@ server <- function(input, output,session) {
                  targetID==as.numeric(targetID_code$id[1]))
       
       
-      if(length(damage)!=0){
+      if(nrow(damage)!=0){
         
         ignite_table_debug <- damage %>% 
           filter(targetID==as.numeric(targetID_code$id[1])& sourceID==as.numeric(actor_temp)) %>% # Source ID for pets like pumpkin

@@ -10,6 +10,8 @@ library(googlesheets4)
 library(googledrive)
 library(shinycssloaders)
 library(stringr)
+library(purrr)
+
 #library(gargle)
 
 source("./ui.R")

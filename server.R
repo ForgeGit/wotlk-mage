@@ -183,7 +183,7 @@ request_cast<-'{
                 fightIDs: %i
                 sourceID: %i
                 hostilityType: Friendlies
-                includeResources: false
+                includeResources:true
                 
             ) {
                 data
@@ -444,6 +444,7 @@ server <- function(input, output,session) {
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
                paste0("- 18/04/2023: Missing enchant notification for most slots."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Resource metrics added (HP/Mana/SP)."),
                paste0("- 17/04/2023: Change log released."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tabs included."),
                paste0("- 16/04/2023: Notifications for unusual values. (See FAQ)"),
@@ -661,6 +662,7 @@ server <- function(input, output,session) {
     output$cast_metrics_1 <- renderUI({ HTML(paste(paste0("")))})
     output$cast_metrics_2 <- renderUI({ HTML(paste(paste0("")))})
     output$extra_algalon <- renderUI({ HTML(paste(paste0("")))})
+    output$summary_header <- renderUI({ HTML(paste(paste0("")))})
     
     ##### + Parse fight ID ####
     
@@ -967,6 +969,19 @@ server <- function(input, output,session) {
           
           select(timestamp,abilityGameID,type,sourceID,targetID)
         
+        ##### Resources ####
+        
+        resources <- casts %>% 
+          filter(sourceID == as.numeric(actor_temp) & targetID==as.numeric(actor_temp)#& sourceID==4
+          )
+        
+        
+        mana <- casts %>% 
+          mutate(row = map(classResources, ~ bind_rows(.x))) %>%
+          select(row,timestamp) %>% 
+          unnest(row) %>%
+          mutate(mana_per = amount/max)%>%
+          filter(timestamp==max(timestamp))
         
         
         ### Render output ######
@@ -984,14 +999,25 @@ server <- function(input, output,session) {
         
         Munch_NET_result <- (round(ignite_table$Munch_NET_2)*-1)
         
+        lowest_hp <- min(resources$hitPoints,na.rm=T)
+        max_sp <- max(resources$spellPower,na.rm=T)
+        mana_end <-  round(min(mana$mana_per,na.rm=T),2)*100
+        
+        
         ####  Header   ####
         output$summary_header <- renderUI({
           
           HTML(paste(paste0("<h3> Metrics for ",actor_name,
                             " on ",fight_name," - ",
-                            sub_spec," ",spec_image,"</h3>"), 
+                            sub_spec," ",spec_image,"</h3>"),
+                     paste0("<b>Resources through the fight:</b>"),
+                     paste0("Lowest HP%: ",lowest_hp,"% <b>|</b> ",
+                            "Highest Spellpower: ",prettyNum(max_sp,big.mark=",",scientific=FALSE)," <b>|</b> ",
+                            "Mana at the end of the fight: ",mana_end,"%"), 
                      sep = '<br/>'))
         })
+        
+        
         
         if(nchar(enchants)>0){
           
@@ -1144,7 +1170,7 @@ server <- function(input, output,session) {
             paste0("<b>Living Bomb metrics:</b>"),
             str_lb_clip,
             "<br/",
-            paste0("<b>Ms<sup>3</sup> between Fireball and Pyroblast casts (<750ms):</b>"),
+            paste0("<b>Milliseconds between Fireball and Pyroblast casts (<750ms):</b>"),
             str_delay_5,
             str_delay_6,
             str_delay_7,
@@ -1282,7 +1308,6 @@ server <- function(input, output,session) {
             "<br/",
             paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
             paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
-            paste0("<i><sup>3</sup> Milliseconds; 1,000 milliseconds = 1 second.</i>"), 
             paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left)</i>"), 
             paste0("<i><sup>5</sup> Hot Streaks not fully used. Not fully consumed before it got 'refreshed'. i.e. You got hot streak while you had hot streak.</i>"), 
             paste0("<i><sup>*</sup> This numbers are BEFORE partial resists.</i>"), 
@@ -1353,7 +1378,11 @@ server <- function(input, output,session) {
                       "&entry.1911698108=",
                       sub_spec,
                       "&entry.1948745936=",
-                      as.numeric(nrow(Marked_Data))
+                      as.numeric(nrow(Marked_Data)),
+                      "&entry.1124325413=",
+                      max_sp,
+                      "&entry.2031855061=",
+                      nchar(enchants)
                       )
         
         

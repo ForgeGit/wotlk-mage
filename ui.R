@@ -147,10 +147,13 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(type = "tabs",
                   tabPanel("Metrics",
-                  
+                                       
                   
                   fluidRow(
                     column(width = 12, uiOutput("summary_header"))
+                  ),
+                  fluidRow(
+                    column(width = 12, uiOutput("alert_header"))
                   ),
                   br(),
                   

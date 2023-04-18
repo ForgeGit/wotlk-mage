@@ -443,6 +443,7 @@ server <- function(input, output,session) {
   output$Changelog <- renderUI({
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
+               paste0("- 18/04/2023: Missing enchant notification for most slots."),
                paste0("- 17/04/2023: Change log released."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tabs included."),
                paste0("- 16/04/2023: Notifications for unusual values. (See FAQ)"),
@@ -466,7 +467,7 @@ server <- function(input, output,session) {
     HTML(paste(paste0("<h5><b>Frequently Asked Questions<sup>Is the app dumb? Or is it me?</sup>:</b></h5>"),
                
                paste0("<b>- Color scheme:</b>"),
-               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#54A5BE\"> Information text.</font>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#54A5BE\"> Information text. Not good. Not bad. Neutral.</font>"),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#D78613\"> There is something weird. It is probably ok, but it could be worth looking into.<sup>*</sup></font>"),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#BE5350\"> This needs your attention. Very likely, you are doing something wrong.<sup>*</sup></font>"),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=\"#61B661\"> Is it luck? Is it skill? I can't tell, but you did something right.</font>"),
@@ -698,19 +699,19 @@ server <- function(input, output,session) {
     
     spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
     
-    request <- WCL_API2_request(
+    combatinfo <- WCL_API2_request(
       sprintf(request_spec, 
               as.character(extract_log_id(as.character(input$log_id))), # Log ID
               as.numeric(fight_temp),  # Fight ID
               as.numeric(actor_temp))  # Actor ID
     )$data$reportData$report$events$data
     
-    if(length(request)!=0){
-      request <-  request[[32]][[1]][[1]]
+    if(length(combatinfo)!=0){
+      spec_temp <-  combatinfo[[32]][[1]][[1]]
       
-      spec$arcane_tree[1] = request[1]
-      spec$fire_tree[1] = request[2]
-      spec$frost_tree[1] = request[3]
+      spec$arcane_tree[1] = spec_temp[1]
+      spec$fire_tree[1] = spec_temp[2]
+      spec$frost_tree[1] = spec_temp[3]
       
       spec_main <- spec
       
@@ -719,7 +720,7 @@ server <- function(input, output,session) {
                       ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
       
       spec <- as.character(spec$spec[1])
-      
+      rm(spec_temp)
     } else{spec <- "No Spec"}
     
     
@@ -729,6 +730,32 @@ server <- function(input, output,session) {
     # Fire mages only from here onward
     # Have to change for frost ignite spec
     if(spec=="Fire" |  any(actors()$name %in% c("Dr. Boom"))==TRUE ){
+      
+      ###### Enchants ######
+      enchants <- combatinfo %>% 
+        filter(type=="combatantinfo") %>% 
+        select(gear) %>% 
+        pull(.) 
+      
+      
+      enchants <- enchants[[1]] %>% 
+        mutate(icon = str_extract(icon, "(?<=inv_)[A-Za-z ]+"),
+               permanentEnchant = as.character(permanentEnchant),
+               permanentEnchant= if_else(icon=="helmet" & is.na(permanentEnchant), "helmet",permanentEnchant),
+               permanentEnchant= if_else(icon=="shoulder" & is.na(permanentEnchant), "shoulder",permanentEnchant),
+               permanentEnchant= if_else(icon=="chest" & is.na(permanentEnchant), "chest",permanentEnchant),
+               permanentEnchant= if_else(icon=="pants" & is.na(permanentEnchant), "pants",permanentEnchant),
+               permanentEnchant= if_else(icon=="boots" & is.na(permanentEnchant), "boots",permanentEnchant),
+               permanentEnchant= if_else(icon=="gauntlets" & is.na(permanentEnchant), "gloves",permanentEnchant),
+               permanentEnchant= if_else(icon=="bracer" & is.na(permanentEnchant), "bracer",permanentEnchant),
+               permanentEnchant= if_else(icon=="weapon" & is.na(permanentEnchant), "weapon",permanentEnchant),
+               permanentEnchant= if_else(icon=="staff" & is.na(permanentEnchant), "staff",permanentEnchant),
+               permanentEnchant= if_else( (lead(icon)=="staff"|lead(icon)=="weapon") & is.na(permanentEnchant), 
+                                          "cloak",permanentEnchant))%>%
+        filter(!(is.na(permanentEnchant) | grepl("[0-9]",permanentEnchant)))%>%
+        pull(permanentEnchant) %>%
+        paste(collapse = ",") %>%   str_to_sentence()
+      
       
       
       ###### Targets detection ####
@@ -965,6 +992,19 @@ server <- function(input, output,session) {
                             sub_spec," ",spec_image,"</h3>"), 
                      sep = '<br/>'))
         })
+        
+        if(nchar(enchants)>0){
+          
+          output$alert_header <- renderUI({
+            
+            HTML(paste(paste0("<font color=\"#BE5350\">Missing Enchants: ",enchants,".</font>"), 
+                       sep = '<br/>'))
+          })
+          
+          
+        }
+        
+        
         
         ####  Ignite Metrics left  ####  
         
@@ -1437,7 +1477,7 @@ server <- function(input, output,session) {
         str_pyro_hard_2 <- paste0("- Pyroblasts Hard-Cast (debug) - For all intendand purposes, this metric could be wrong - Only interpret if you know:",sum(insta_pyros_db$skip))
         
         HTML(paste(
-          str_pyro_hot,str_pyro_hard_2,#url, # creds$type, 
+          str_pyro_hot,str_pyro_hard_2,length(enchants),enchants,#url, # creds$type, 
           sep = '<br/>'))
         
       })  

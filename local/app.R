@@ -21,10 +21,10 @@ source("./server.R")
 shinyApp(
   
   ui,
-  server 
+  server
 )
 
 #shinyApp(ui = ui, server = server)
 
-#shiny::runApp(display.mode="showcase")
+#shiny::runApp()
 #

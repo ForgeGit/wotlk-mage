@@ -114,6 +114,7 @@ ui <- fluidPage(
       br(),
       "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale. Partially Freya)",
       br(),
+      tags$span(HTML("<span style='color:#D78613;'>The app UI is currently undergoing maintenance - My apologies for any inconvenience this may cause you. If the app crashes for you, please check back later. The screen grey out after 1 minute of inactivity is NOT the app crash.</span>")),
       br(),
       # input for log ID
       textInput("log_id", "Enter Log ID:"),

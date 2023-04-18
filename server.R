@@ -488,6 +488,10 @@ server <- function(input, output,session) {
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; I do not have plans at the moment to include Dummies due to their buggy nature and weird inconsistent results in the past."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; <i>Note: Weakauras, addons, or some spell interactions could work differently in instances vs open-world. Consider this when testing @ Dr. Boom</i>"),
                '<br/>',
+               
+               paste0("<b>- What about Frost/Arcane Mages?:</b>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; This app began as an ignite measuring tool. I plan to support all mage specs in the near future."),
+               '<br/>',
                paste0("*<i>Do you think this is a mistake? Contact me on Discord at Forge#0001</i>."),
                sep = '<br/>'))
     
@@ -531,6 +535,18 @@ server <- function(input, output,session) {
     
   })
   
+  ##### DR Boom main trigger ####
+  
+  
+  doctor_pressence <-eventReactive(input$submit_log_id, { #IS DR BOOM PRESENT?
+  
+  if(
+    any(actors()$name %in% c("Dr. Boom")) ==T){"TRUE"} else{"FALSE"}
+
+    
+  })
+  
+  
   ##### + Fights list ######
   
   fights <-eventReactive(input$submit_log_id, {
@@ -545,7 +561,7 @@ server <- function(input, output,session) {
     if(!is.null(fights)){
       
       ##### Dr Boom Identification #####
-      if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+      if(doctor_pressence()=="TRUE"){
         fights
       } else if(max(fights$encounterID)>0) {
         
@@ -602,7 +618,7 @@ server <- function(input, output,session) {
         
         ###### Dr. Boom logic ####
         
-      } else if(any(actors()$name %in% c("Dr. Boom"))==TRUE) {
+      } else if(doctor_pressence()=="TRUE") {
         
         updateSelectInput(session, "character", choices = actors()$name)
         
@@ -628,7 +644,7 @@ server <- function(input, output,session) {
         
         ###### Dr. Boom logic ####
         
-      } else if(any(actors()$name %in% c("Dr. Boom"))==TRUE){  
+      } else if(doctor_pressence()=="TRUE"){  
         
         updateSelectInput(session, "fight", choices = fights()$startTime)
         
@@ -650,7 +666,6 @@ server <- function(input, output,session) {
     
   })
   
-  
   ### STEP 2: Retrieve data and estimations ####
   
   observeEvent(input$submit_char_id, {
@@ -663,12 +678,12 @@ server <- function(input, output,session) {
     output$cast_metrics_2 <- renderUI({ HTML(paste(paste0("")))})
     output$extra_algalon <- renderUI({ HTML(paste(paste0("")))})
     output$summary_header <- renderUI({ HTML(paste(paste0("")))})
-    
+
     ##### + Parse fight ID ####
-    
+
     fight_name <- input$fight
     
-    if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+    if(doctor_pressence()=="TRUE"){
       
       fight_temp<- fights() %>% 
         filter(startTime==as.numeric(fight_name)) %>% 
@@ -677,14 +692,14 @@ server <- function(input, output,session) {
       fight_temp <- fight_temp$id[1]
       
     }else {
-      fight_temp <- parse_number(input$fight)
+      fight_temp <- parse_number(fight_name)
     }
     
     ##### + Parse actor ID ####
     
     actor_name <- input$character
     
-    if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+    if(doctor_pressence()=="TRUE"){
       
       actor_temp<- actors() %>% 
         filter(name==actor_name  | id ==parse_number(input$character)) %>% 
@@ -693,22 +708,50 @@ server <- function(input, output,session) {
       actor_temp <- actor_temp$id[1]
       
     }else {
-      actor_temp <- parse_number(input$character)
+      actor_temp <- parse_number(actor_name)
     }
+   
+    #### + All casts extraction ####
+    casts <- WCL_API2_request(sprintf(request_cast, 
+                                      as.character(extract_log_id(as.character(input$log_id))), 
+                                      as.numeric(fight_temp), 
+                                      as.numeric(actor_temp)))$data$reportData$report$events$data 
+    # request <- WCL_API2_request(sprintf(request_damage,  ## Damage 
+    #                               as.character(extract_log_id(as.character(input$log_id))),
+    #                               as.numeric(fight_temp), 
+    #                               as.numeric(actor_temp), 
+    #                               as.numeric(targetID_code$id[1])
+    #                               )
+    #                             )$data$reportData$report$events$data
     
+    pre_combatant_trigger <- any(grepl("combatantinfo", casts$type))
+    ignite_pressence <- any(grepl(12654, casts$abilityGameID))
     
-    ####+ Spec detection ####
+    if(pre_combatant_trigger==F & doctor_pressence()=="FALSE"){
+ 
+      
+      ####+ Spec detection ####
+      
+      spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
+      
+      combatinfo <- WCL_API2_request(
+        sprintf(request_spec, 
+                as.character(extract_log_id(as.character(input$log_id))), # Log ID
+                as.numeric(fight_temp),  # Fight ID
+                as.numeric(actor_temp))  # Actor ID
+      )$data$reportData$report$events$data
+ 
+      
+    } else if (pre_combatant_trigger==T){
+      spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
+      combatinfo <- casts[grepl("combatantinfo", casts$type),]
+    } else { 
+      combatinfo <- vector(length = 0)
+      }
     
-    spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
+
+    if(length(combatinfo)!=0){ 
     
-    combatinfo <- WCL_API2_request(
-      sprintf(request_spec, 
-              as.character(extract_log_id(as.character(input$log_id))), # Log ID
-              as.numeric(fight_temp),  # Fight ID
-              as.numeric(actor_temp))  # Actor ID
-    )$data$reportData$report$events$data
-    
-    if(length(combatinfo)!=0){
       spec_temp <-  combatinfo[[32]][[1]][[1]]
       
       spec$arcane_tree[1] = spec_temp[1]
@@ -720,20 +763,27 @@ server <- function(input, output,session) {
       spec <- spec %>% mutate(   
         spec = ifelse(arcane_tree>fire_tree & arcane_tree>frost_tree,"Arcane",
                       ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
+ 
       
       spec <- as.character(spec$spec[1])
-      rm(spec_temp)
-    } else{spec <- "No Spec"}
-    
-    
-   
+     # rm(spec_temp)
+      
+    } else {
+ 
+      
+      spec <- "No Spec"
+      
+    }
     
     #### Fire mages ####
+    
     # Fire mages only from here onward
-    # Have to change for frost ignite spec
-    if(spec=="Fire" |  any(actors()$name %in% c("Dr. Boom"))==TRUE ){
+    # Have to change for frost ignite spec (Pending Hodir log)
+
+    if(spec=="Fire" | ignite_pressence == T | doctor_pressence()=="TRUE" ){
       
       ###### Enchants ######
+      if(doctor_pressence()=="FALSE" & spec=="Fire"){
       enchants <- combatinfo %>% 
         filter(type=="combatantinfo") %>% 
         select(gear) %>% 
@@ -757,13 +807,12 @@ server <- function(input, output,session) {
         filter(!(is.na(permanentEnchant) | grepl("[0-9]",permanentEnchant)))%>%
         pull(permanentEnchant) %>%
         paste(collapse = ",") %>%   str_to_sentence()
-      
-      
+      } else { enchants = "NO DATA"}
       
       ###### Targets detection ####
       
-       ####### Dr. Boom (again) ####
-      if(any(actors()$name %in% c("Dr. Boom"))==TRUE){
+      ####### Dr. Boom (again) ####
+      if(doctor_pressence()=="TRUE"){
         fight_name="Dr. Boom"
       }
       
@@ -797,23 +846,20 @@ server <- function(input, output,session) {
                                     "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
                                     "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
       } else {
+        
         sub_spec <- spec   
         spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
       }
       
-      #### + All casts extraction ####
-    
-      casts <- WCL_API2_request(sprintf(request_cast, 
-                                        as.character(extract_log_id(as.character(input$log_id))), 
-                                        as.numeric(fight_temp), 
-                                        as.numeric(actor_temp)))$data$reportData$report$events$data 
-      # request <- WCL_API2_request(sprintf(request_damage,  ## Damage 
-      #                               as.character(extract_log_id(as.character(input$log_id))),
-      #                               as.numeric(fight_temp), 
-      #                               as.numeric(actor_temp), 
-      #                               as.numeric(targetID_code$id[1])
-      #                               )
-      #                             )$data$reportData$report$events$data
+      if(length(combatinfo)!=0){ 
+        
+        if(spec_temp[3]>spec_temp[2] & ignite_pressence==T){
+          
+          sub_spec <- "Frostnite" 
+          spec_image <-   "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mount_frostyflyingcarpet.jpg' height='25' width='25'/>"
+          
+        } 
+      }
       
       
       #### Damage (Main Target only) ####
@@ -849,7 +895,7 @@ server <- function(input, output,session) {
           
           filter(abilityGameID ==55360 & 
                    type == "refreshdebuff")
-        
+
         ### Cast gaps extraction
         
         # casts <- WCL_API2_request(sprintf(request_cast, 
@@ -924,7 +970,7 @@ server <- function(input, output,session) {
                                            type=="begincast",
                                          "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
         
-        
+
         ## Hot streaks and Pyros Hotstreaks
         
         insta_pyros_db <- casts %>% 
@@ -1002,7 +1048,31 @@ server <- function(input, output,session) {
         lowest_hp <- min(resources$hitPoints,na.rm=T)
         max_sp <- max(resources$spellPower,na.rm=T)
         mana_end <-  round(min(mana$mana_per,na.rm=T),2)*100
+
         
+        #### Force Spec if needed ####
+        if (spec=="No Spec" & (
+          sum(
+            grepl("Frostfire Bolt", 
+                  ignite_table_debug$abilityGameID)) > sum(
+                    grepl("Fireball", 
+                          ignite_table_debug$abilityGameID)) 
+        ))
+        {
+          
+          sub_spec <- "FFB"
+          
+        } else if (spec=="No Spec" & (
+          sum(
+            grepl("Frostfire Bolt", 
+                  ignite_table_debug$abilityGameID)) < sum(
+                    grepl("Fireball", 
+                          ignite_table_debug$abilityGameID)) 
+        )){ 
+          
+          sub_spec <- "TTW"
+          
+        } 
         
         ####  Header   ####
         output$summary_header <- renderUI({
@@ -1259,7 +1329,11 @@ server <- function(input, output,session) {
           if (sub_spec=="FFB"){
             str_mainspell <- str_ffb} else if(sub_spec=="TTW"){
               str_mainspell <- str_fb } else {
-                str_mainspell <- ifelse(length(str_ffb)>=1, str_ffb,str_fb) 
+                str_mainspell <- ifelse(sum(grepl("Frostfire Bolt", 
+                                                  ignite_table_debug$abilityGameID)) > sum(grepl("Fireball", 
+                                                                                                 ignite_table_debug$abilityGameID)), 
+                                        str_ffb,
+                                        str_fb) 
               }
           
           

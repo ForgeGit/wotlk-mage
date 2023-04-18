@@ -1266,7 +1266,7 @@ server <- function(input, output,session) {
           pyros_per_hotstreak <- round(n_insta_pyros/n_total_hot_streak, digits = 2)
           
           ################### REVIEW ##################
-          if(pyros_per_hotstreak<1 & boss_name_singular %in% c("Vezax","Hodir","Freya")){
+          if(pyros_per_hotstreak<1 & boss_name_singular %in% c("General","Hodir","Freya")){
             
           str_hotstreak_pyro <- paste0("<font color=\"#D78613\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>" )
         

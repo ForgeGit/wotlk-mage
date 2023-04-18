@@ -443,8 +443,10 @@ server <- function(input, output,session) {
   output$Changelog <- renderUI({
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
-               paste0("- 18/04/2023: Missing enchant notification for most slots."),
+               paste0("- 18/04/2023: Missing enchant notification for most slots added."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Resource metrics added (HP/Mana/SP)."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;App supports 'no spec' on logs as long as you had 1 ignite tick on target."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='https://ko-fi.com/home/coffeeshop?ReturnUrl=/&txid=e01ae145-0a7a-4d49-8c3a-457b95d3de3e'>Added support for 'Frostnite' spec (Frost spec w/ ignite). Thanks to a donation.</a>"),
                paste0("- 17/04/2023: Change log released."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tabs included."),
                paste0("- 16/04/2023: Notifications for unusual values. (See FAQ)"),
@@ -453,11 +455,13 @@ server <- function(input, output,session) {
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pyroblast Metrics added."),
                paste0("- 14/04/2023: Dark Mode enabled as default."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pyroblast hard-cast detection."),
-               paste0("- 13/04/2023: Dr. Boom support and Freya."),
+               paste0("- 13/04/2023: Freya support"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='https://ko-fi.com/home/coffeeshop?ReturnUrl=/&txid=656b9483-24e7-49be-ad38-9465c1b42699'>Dr. Boom logs supported by the app. Thanks to a donation.</a>"),
                paste0("- 12/04/2023: Fireball and Pyroblast delay estimations."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Living Bomb clipping detection."),
                paste0("- 11/04/2023: First release."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Munchalyzer."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='https://ko-fi.com/home/coffeeshop?ReturnUrl=/&txid=da1b79d1-84cb-4df2-ac38-2fe2d5068acf'>Thank you Villms for your donation and for making this possible!</a>"),
                sep = '<br/>'))
     
     

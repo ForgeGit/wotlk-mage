@@ -682,7 +682,8 @@ server <- function(input, output,session) {
     output$cast_metrics_2 <- renderUI({ HTML(paste(paste0("")))})
     output$extra_algalon <- renderUI({ HTML(paste(paste0("")))})
     output$summary_header <- renderUI({ HTML(paste(paste0("")))})
-
+    output$alert_header <- renderUI({ HTML(paste(paste0("")))})
+    
     ##### + Parse fight ID ####
 
     fight_name <- input$fight

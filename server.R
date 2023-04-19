@@ -998,6 +998,7 @@ server <- function(input, output,session) {
                                            "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
     
           ### FFB Hit Cap
+          Draenei_buff<- ifelse(length(Draenei_buff)>2,Draenei_buff,"")
           hitCap <- paste0("210 to 288",Draenei_buff)
           hitCap <- ifelse(hitSpell>=10,hitCap,"")
           realhitCap <- ifelse(length(Draenei_buff)>3, 262, 288)
@@ -1025,9 +1026,11 @@ server <- function(input, output,session) {
             )%>%
             mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
                                              type=="begincast",
-                                           "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+                                           "Interrupted","OK")) %>% 
+            filter(flag_interrupt=="Interrupted")
       
           ### TTW Hit Cap
+          Draenei_buff<- ifelse(length(Draenei_buff)>2,Draenei_buff,"")
           hitCap <- paste0("367",Draenei_buff)
           hitCap <- ifelse(hitSpell>=10,hitCap,"")
           realhitCap <- ifelse(length(Draenei_buff)>3, 341, 367)

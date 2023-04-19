@@ -1016,7 +1016,7 @@ server <- function(input, output,session) {
           hitCap <- paste0("210 to 288",Draenei_buff)
           hitCap <- ifelse(hitSpell>=10,hitCap,"")
           
-          realhitCap <- ifelse(nchar(Draenei_buff)>1, 262, 288)
+          realhitCap <- ifelse(nchar(Draenei_buff)>3, 262, 288)
           
           alert_hit_1 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-128,
                                 "<font color=\"#BE5350\">","")

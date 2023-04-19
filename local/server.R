@@ -796,7 +796,7 @@ server <- function(input, output,session) {
           filter(type=="combatantinfo") 
           
         enchants <- combatinfo$gear[[1]] %>%
-          mutate(icon = str_extract(icon, "\\w+"),
+          mutate(icon = str_extract(icon,"(?<=inv_)[A-Za-z ]+"),
                  permanentEnchant = as.character(permanentEnchant),
                  permanentEnchant = case_when(
                    icon == "helmet" & is.na(permanentEnchant) ~ "helmet",
@@ -825,13 +825,17 @@ server <- function(input, output,session) {
             `[[`(1) %>% 
             filter(ability == 28878) %>% 
             mutate(Draenei_buff = ifelse(nrow(.) >= 1, paste0("<sup>[-26]</sup>", "<img src='https://wow.zamimg.com/images/wow/icons/large/inv_helmet_21.jpg' height='15' width='15'/>"), "")) %>% 
-            pull(Draenei_buff)
+            slice(1) %>%
+            pull(Draenei_buff) %>% 
+            toString()
           
           
       } else { 
         enchants = "NO DATA"
+        Draenei_buff = ""
         }
       
+    
       ###### Targets detection ####
       
       targetID_code <- actors() %>%
@@ -900,6 +904,15 @@ server <- function(input, output,session) {
         ignite_table_debug$MARKED <- ifelse(str_detect(ignite_table_debug$abilityGameID, "^\\d+$"), "MARKED", "NOT MARKED")
         
         Marked_Data <- subset(ignite_table_debug, MARKED == "MARKED")
+        
+        ###### Dead ######
+        if("overkill" %in% colnames(casts)) {
+          dead <- casts %>% 
+            filter(targetID == as.numeric(actor_temp)) %>%
+            summarize(total_overkill = sum(overkill, na.rm = TRUE)) %>%
+            mutate(dead = if_else(total_overkill > 0 & !is.na(total_overkill), "Dead", "")) %>%
+            pull(dead)
+        } else {dead<-""}
         
         #### Force Spec if needed ####
         
@@ -1003,7 +1016,7 @@ server <- function(input, output,session) {
           hitCap <- paste0("210 to 288",Draenei_buff)
           hitCap <- ifelse(hitSpell>=10,hitCap,"")
           
-          realhitCap <- ifelse(length(Draenei_buff)>3, 262, 288)
+          realhitCap <- ifelse(nchar(Draenei_buff)>3, 262, 288)
           
           alert_hit_1 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-128,
                                 "<font color=\"#BE5350\">","")
@@ -1037,7 +1050,7 @@ server <- function(input, output,session) {
           Draenei_buff<- ifelse(exists("Draenei_buff") | !is.na(Draenei_buff),Draenei_buff,"")
           hitCap <- paste0("367",Draenei_buff)
           hitCap <- ifelse(hitSpell>=10,hitCap,"")
-          realhitCap <- ifelse(length(Draenei_buff)>3, 341, 367)
+          realhitCap <- ifelse(nchar(Draenei_buff)>3, 341, 367)
           
           alert_hit_1 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-50,
                               "<font color=\"#BE5350\">","")
@@ -1120,6 +1133,8 @@ server <- function(input, output,session) {
         
         ### Render output ######
         ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
+        ignite_total_dealt <- round(ignite_table$Total_Ignite_Dmg_Dealt)
+        ignite_lost_sadge <- round(ignite_table$Ignite_tick_lost_dead2)
         
         n_total_pyros<- round(as.numeric(nrow(pyro_n)),2)
         n_total_pyro_hard_cast <- round(as.numeric(nrow(pyro_hard_cast)),2)
@@ -1135,13 +1150,21 @@ server <- function(input, output,session) {
         
         lowest_hp <- min(resources$hitPoints,na.rm=T)
         max_sp <- max(resources$spellPower,na.rm=T)
-        mana_end <-  round(min(mana$mana_per,na.rm=T),2)*100
+        
+        mana_end_n <- round(min(mana$mana_per,na.rm=T),2)*100
+        
+        mana_end <-  ifelse(nchar(dead)>2, paste0("<font color=\"#BE5350\">Dead (",mana_end_n,"%)</font>"),
+                            paste0(mana_end_n,"%"))
       
         lb_clipped <- nrow(debuff_table)
         
         lb_clipped_alert_1 <- ifelse(lb_clipped==0,"","<font color=\"#BE5350\">")
         lb_clipped_alert_2 <- ifelse(lb_clipped==0,"","</font>")
         
+        
+        ignite_lost_alert_1 <- ifelse(ignite_lost_sadge>=30000 & ignite_lost_sadge<=50000 & targetID_code$name[1]!="Hodir","<font color=\"#D78613\">",
+                                      ifelse(ignite_lost_sadge>50000 & targetID_code$name[1]!="Hodir","<font color=\"#BE5350\">",""))  ## I need a better way to show this 
+        ignite_lost_alert_2 <- ifelse(ignite_lost_sadge>=30000 & targetID_code$name[1]!="Hodir","</font>","") ## I need a better way to show this 
         ####  Header   ####
         output$summary_header <- renderUI({
   
@@ -1153,7 +1176,7 @@ server <- function(input, output,session) {
                      paste0(alert_hit_1,"Hit: ",hitSpell," / ",hitCap,alert_hit_2," <b>|</b> ",
                             "Lowest HP%: ",lowest_hp,"% <b>|</b> ",
                             "Highest Spellpower: ",prettyNum(max_sp,big.mark=",",scientific=FALSE)," <b>|</b> ",
-                            "Mana at the end of the fight: ",mana_end,"%"), 
+                            "End-of-fight mana: ",mana_end), 
                      sep = '<br/>'))
         })
         
@@ -1178,10 +1201,9 @@ server <- function(input, output,session) {
           
 
           str1 <- paste0( "- Expected ignite damage<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
-          str2 <- paste0( "- Actual ignite damage dealt<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE))
-          str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
-          str4 <- paste0(prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt)),big.mark=",",scientific=FALSE), " - ",
-                         prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE),
+          str2 <- paste0( "- Actual ignite damage dealt<sup>*</sup>: ",  prettyNum((ignite_total_dealt),big.mark=",",scientific=FALSE))
+          str4 <- paste0(prettyNum((ignite_total_dealt),big.mark=",",scientific=FALSE), " - ",
+                         prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (ignite_lost_sadge),big.mark=",",scientific=FALSE),
                          " = ",
                          prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
           
@@ -1205,8 +1227,8 @@ server <- function(input, output,session) {
           str_summ1 <- paste0("- Expected ignite damage before target death<sup>*</sup>: ",
                               prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE),
                               " - ",  
-                              prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE),
-                              " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (round(ignite_table$Ignite_tick_lost_dead2)),big.mark=",",scientific=FALSE) )
+                              prettyNum(ignite_lost_sadge,big.mark=",",scientific=FALSE),
+                              " = ",prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential))- (ignite_lost_sadge),big.mark=",",scientific=FALSE) )
           
           HTML(paste(
             paste0("<h4> <b>",ignite_img," Munching Metrics (Main Target only) </b> </h4>"),
@@ -1224,7 +1246,7 @@ server <- function(input, output,session) {
         
         output$summary_ignite_2 <- renderUI({
           
-          str3 <- paste0("- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(round(ignite_table$Ignite_tick_lost_dead2),big.mark=",",scientific=FALSE))
+          str3 <- paste0(ignite_lost_alert_1,"- Ignite lost to (target) death<sup>1</sup>: ",  prettyNum(ignite_lost_sadge,big.mark=",",scientific=FALSE),ignite_lost_alert_2)
           str2_res <- paste0( "- Ignite damage dealt (after resists): ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Dealt_resist)),big.mark=",",scientific=FALSE))
           str_max <- paste0( "- Highest ignite tick: ",  prettyNum((max(ignite_table_debug$igniteSUB_resist)),big.mark=",",scientific=FALSE))
           ## Final format
@@ -1436,10 +1458,10 @@ server <- function(input, output,session) {
           HTML(paste(
             "<br/",
             paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
-            paste0("<i><sup>2</sup> This is the # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
+            paste0("<i><sup>2</sup> # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
             paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left)</i>"), 
             paste0("<i><sup>5</sup> Hot Streaks not fully used. Not fully consumed before it got 'refreshed'. i.e. You got hot streak while you had hot streak.</i>"), 
-            paste0("<i><sup>*</sup> This numbers are BEFORE partial resists.</i>"), 
+            paste0("<i><sup>*</sup> Before partial resists.</i>"), 
             sep = '<br/>'))
           
         })
@@ -1503,7 +1525,7 @@ server <- function(input, output,session) {
                       "&entry.1899085980=",
                       max(ignite_table_debug$igniteSUB_resist),
                       "&entry.303429649=",
-                      round(ignite_table$Total_Ignite_Dmg_Dealt),
+                      ignite_total_dealt,
                       "&entry.1911698108=",
                       sub_spec,
                       "&entry.1948745936=",
@@ -1511,9 +1533,10 @@ server <- function(input, output,session) {
                       "&entry.1124325413=",
                       max_sp,
                       "&entry.2031855061=",
-                      nchar(enchants)
+                      nchar(enchants),
+                      "&entry.1370589148=",
+                      ignite_lost_sadge
                       )
-        
         
         
         #nrow(Marked_Data)

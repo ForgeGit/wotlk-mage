@@ -165,12 +165,12 @@ ui <- fluidPage(
                   br(),
                   fluidRow(
                     column(width = 5, uiOutput("cast_metrics_1")),
-                    column(width = 3, uiOutput("cast_metrics_2"))
+                    column(width = 4, uiOutput("cast_metrics_2"))
                   ),
                   
                   fluidRow(
                     column(width = 5, uiOutput("cast_delays_1")),
-                    column(width = 3, uiOutput("cast_delays_2"))
+                    column(width = 4, uiOutput("cast_delays_2"))
                   ),
                   fluidRow(
                     column(width = 7, uiOutput("extra_algalon"))

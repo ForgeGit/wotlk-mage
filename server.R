@@ -284,7 +284,7 @@ ignite_cleaning <- function(x) {
     group_by(fight,sourceID,targetID) %>% 
     
     ## Ignite chunks https://github.com/ForgeGit/ignite_wotlk#part-2---ignite-chunks
-    mutate(IGNITE_END =  if_else(lag(abilityGameID)=="Ignite" &  
+    mutate(IGNITE_END =  ifelse(lag(abilityGameID)=="Ignite" &  
                                    lag(abilityGameID,2)=="Ignite",
                                  "START",
                                  "NA"),
@@ -686,7 +686,7 @@ server <- function(input, output,session) {
     output$alert_header <- renderUI({ HTML(paste(paste0("")))})
     
     ##### + Parse fight ID ####
-
+     
     fight_name <- input$fight
     
     if(doctor_pressence()=="TRUE"){
@@ -696,7 +696,7 @@ server <- function(input, output,session) {
         select(id)
       
       fight_temp <- fight_temp$id[1]
-      
+      fight_name="Dr. Boom"
     }else {
       fight_temp <- parse_number(fight_name)
     }
@@ -733,14 +733,10 @@ server <- function(input, output,session) {
     pre_combatant_trigger <- any(grepl("combatantinfo", casts$type))
     ignite_pressence <- any(grepl(12654, casts$abilityGameID))
     
-     
-    
     if(pre_combatant_trigger==F & doctor_pressence()=="FALSE"){
  
-      
       ####+ Spec detection ####
        
-      
       spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
       
       combatinfo <- WCL_API2_request(
@@ -774,15 +770,13 @@ server <- function(input, output,session) {
       spec <- spec %>% mutate(   
         spec = ifelse(arcane_tree>fire_tree & arcane_tree>frost_tree,"Arcane",
                       ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
- 
+       
       
       spec <- as.character(spec$spec[1])
      # rm(spec_temp)
       
     } else {
  
-       
-      
       spec <- "No Spec"
       
     }
@@ -794,41 +788,51 @@ server <- function(input, output,session) {
 
     if(spec=="Fire" | ignite_pressence == T | doctor_pressence()=="TRUE" ){
       
-      ###### Enchants ######
+      ###### Enchants & Hit metrics ######
+      
       if(doctor_pressence()=="FALSE" & spec=="Fire"){
-      enchants <- combatinfo %>% 
-        filter(type=="combatantinfo") %>% 
-        select(gear) %>% 
-        pull(.) 
-       
-      
-      
-      enchants <- enchants[[1]] %>% 
-        mutate(icon = str_extract(icon, "(?<=inv_)[A-Za-z ]+"),
-               permanentEnchant = as.character(permanentEnchant),
-               permanentEnchant= if_else(icon=="helmet" & is.na(permanentEnchant), "helmet",permanentEnchant),
-               permanentEnchant= if_else(icon=="shoulder" & is.na(permanentEnchant), "shoulder",permanentEnchant),
-               permanentEnchant= if_else(icon=="chest" & itemLevel>=150 & is.na(permanentEnchant), "chest",permanentEnchant),
-               permanentEnchant= if_else(icon=="pants" & is.na(permanentEnchant), "pants",permanentEnchant),
-               permanentEnchant= if_else(icon=="boots" & is.na(permanentEnchant), "boots",permanentEnchant),
-               permanentEnchant= if_else(icon=="gauntlets" & is.na(permanentEnchant), "gloves",permanentEnchant),
-               permanentEnchant= if_else(icon=="bracer" & is.na(permanentEnchant), "bracer",permanentEnchant),
-               permanentEnchant= if_else(icon=="weapon" & is.na(permanentEnchant), "weapon",permanentEnchant),
-               permanentEnchant= if_else(icon=="staff" & is.na(permanentEnchant), "staff",permanentEnchant),
-               permanentEnchant= if_else( (lead(icon)=="staff"|lead(icon)=="weapon") & is.na(permanentEnchant), 
-                                          "cloak",permanentEnchant))%>%
-        filter(!(is.na(permanentEnchant) | grepl("[0-9]",permanentEnchant)))%>%
-        pull(permanentEnchant) %>%
-        paste(collapse = ",") %>%   str_to_sentence()
-      } else { enchants = "NO DATA"}
+         
+        combatinfo <- combatinfo %>% 
+          filter(type=="combatantinfo") 
+          
+        enchants <- combatinfo$gear[[1]] %>%
+          mutate(icon = str_extract(icon, "\\w+"),
+                 permanentEnchant = as.character(permanentEnchant),
+                 permanentEnchant = case_when(
+                   icon == "helmet" & is.na(permanentEnchant) ~ "helmet",
+                   icon == "shoulder" & is.na(permanentEnchant) ~ "shoulder",
+                   icon == "chest" & itemLevel >= 150 & is.na(permanentEnchant) ~ "chest",
+                   icon == "pants" & is.na(permanentEnchant) ~ "pants",
+                   icon == "boots" & is.na(permanentEnchant) ~ "boots",
+                   icon == "gauntlets" & is.na(permanentEnchant) ~ "gloves",
+                   icon == "bracer" & is.na(permanentEnchant) ~ "bracer",
+                   icon == "weapon" & is.na(permanentEnchant) ~ "weapon",
+                   icon == "staff" & is.na(permanentEnchant) ~ "staff",
+                   lead(icon) %in% c("staff", "weapon") & is.na(permanentEnchant) ~ "cloak",
+                   TRUE ~ permanentEnchant
+                 )) %>%
+          filter(!is.na(permanentEnchant) & !grepl("[0-9]", permanentEnchant)) %>%
+          pull(permanentEnchant) %>%
+          paste(collapse = ",") %>%
+          str_to_sentence() 
+          
+        
+          hitSpell <- combatinfo %>% 
+            pull(hitSpell) 
+           
+          Draenei_buff <- combatinfo %>% 
+            pull(auras) %>% 
+            `[[`(1) %>% 
+            filter(ability == 28878) %>% 
+            mutate(Draenei_buff = ifelse(nrow(.) >= 1, paste0("<sup>[-26]</sup>", "<img src='https://wow.zamimg.com/images/wow/icons/large/inv_helmet_21.jpg' height='15' width='15'/>"), "")) %>% 
+            pull(Draenei_buff)
+          
+          
+      } else { 
+        enchants = "NO DATA"
+        }
       
       ###### Targets detection ####
-       
-      
-      ####### Dr. Boom (again) ####
-      if(doctor_pressence()=="TRUE"){
-        fight_name="Dr. Boom"
-      }
       
       targetID_code <- actors() %>%
         filter(
@@ -864,7 +868,7 @@ server <- function(input, output,session) {
         sub_spec <- spec   
         spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
       }
-      
+  
       if(length(combatinfo)!=0){ 
         
         if(spec_temp[3]>spec_temp[2] & ignite_pressence==T){
@@ -875,6 +879,7 @@ server <- function(input, output,session) {
         } 
       }
       
+      rm(combatinfo)
       
       #### Damage (Main Target only) ####
       damage <- casts %>% 
@@ -896,8 +901,27 @@ server <- function(input, output,session) {
         
         Marked_Data <- subset(ignite_table_debug, MARKED == "MARKED")
         
+        #### Force Spec if needed ####
         
-         
+       sum_ffb_cast <-  sum(
+          grepl("Frostfire Bolt", 
+                ignite_table_debug$abilityGameID))
+        
+        sum_fb_cast <- sum(
+          grepl("Fireball", 
+                ignite_table_debug$abilityGameID))
+        
+        if (spec=="No Spec" & (sum_ffb_cast >  sum_fb_cast)){
+          
+          sub_spec <- "FFB"
+          hitSpell <- "NO DATA"
+        } else if (spec=="No Spec" & (sum_ffb_cast < sum_fb_cast)){ 
+          
+          sub_spec <- "TTW"
+          hitSpell <- "NO DATA"
+        } 
+        rm(sum_fb_cast,sum_ffb_cast)
+        
         #### Debuff LB extraction ####
         debuff_table <- WCL_API2_request(
           sprintf(request_debuff, ## Debuffs
@@ -926,13 +950,14 @@ server <- function(input, output,session) {
           filter(delay<750)
         
         ######## Pyroblasts cancelled/interrupted #######
-        
-        pyro_interrupt <- casts %>% 
+        main_pyro <- casts %>% 
           filter(abilityGameID==42891 & 
                    !(type%in%
                        c("damage","refreshdebuff",
                          "applydebuff","removedebuff")) 
-          )%>%
+          )
+        
+        pyro_interrupt <- main_pyro %>%
           mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
                                            type=="begincast",
                                          "Interrupted","OK")) %>% 
@@ -940,12 +965,7 @@ server <- function(input, output,session) {
         
         ######## Pyroblasts hard-casted #######
         
-        pyro_hard_cast <- casts %>% 
-          filter(abilityGameID==42891 & 
-                   !(type%in%
-                       c("damage","refreshdebuff",
-                         "applydebuff","removedebuff")) 
-          )%>%
+        pyro_hard_cast <- main_pyro %>%
           mutate(cast_time = ifelse(type=="cast" & 
                                       lag(type)=="begincast", 
                                     timestamp-lag(timestamp),
@@ -955,36 +975,83 @@ server <- function(input, output,session) {
         
         ######## Pyroblasts count #######
         
-        pyro_n <- casts %>% 
+        pyro_n <- main_pyro %>% 
           filter(abilityGameID==42891 & 
                    type=="cast") 
         
-         
-        ######## Fireball cancelled/interrupted  #######
         
-        fireball_interrupt <- casts %>% 
-          filter(abilityGameID==42833 & 
-                   !(type%in%
-                       c("damage","refreshbuff",
-                         "applydebuff","removebuff")) 
-          )%>%
-          mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
-                                           type=="begincast",
-                                         "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+        rm(main_pyro)
+        ##### + FFB MAGE SECTION #####
         
-        ######## FFB cancelled/interrupted  #######
+        if(sub_spec=="FFB"){
+          
+          ######## FFB cancelled/interrupted  #######
+          
+          frostfirebolt_interrupt <- casts %>% 
+            filter(abilityGameID==47610 & 
+                     !(type%in%
+                         c("damage","refreshbuff",
+                           "applydebuff","removebuff")) 
+            )%>%
+            mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
+                                             type=="begincast",
+                                           "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+    
+          ### FFB Hit Cap
+          hitCap <- paste0("210 to 288",Draenei_buff)
+          hitCap <- ifelse(hitSpell>=10,hitCap,"")
+          realhitCap <- ifelse(length(Draenei_buff)>3, 262, 288)
+          alert_hit_1 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-128,
+                                "<font color=\"#BE5350\">","")
+          alert_hit_2 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-128,
+                                "</font>","") 
+          
+          ### Main Spell
+          str_mainspell <- paste0("- Frostfire Bolt cancelled: ",nrow(frostfirebolt_interrupt))
+          
+        }
         
-        frostfirebolt_interrupt <- casts %>% 
-          filter(abilityGameID==47610 & 
-                   !(type%in%
-                       c("damage","refreshbuff",
-                         "applydebuff","removebuff")) 
-          )%>%
-          mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
-                                           type=="begincast",
-                                         "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+        ##### + Fireball MAGE SECTION #####
         
+        if(sub_spec=="TTW"){
+          
+          ######## Fireball cancelled/interrupted  #######
+          
+          fireball_interrupt <- casts %>% 
+            filter(abilityGameID==42833 & 
+                     !(type%in%
+                         c("damage","refreshbuff",
+                           "applydebuff","removebuff")) 
+            )%>%
+            mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
+                                             type=="begincast",
+                                           "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
+      
+          ### TTW Hit Cap
+          hitCap <- paste0("367",Draenei_buff)
+          hitCap <- ifelse(hitSpell>=10,hitCap,"")
+          realhitCap <- ifelse(length(Draenei_buff)>3, 341, 367)
+          
+          alert_hit_1 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-50,
+                              "<font color=\"#BE5350\">","")
+          alert_hit_2 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-50,
+                                "</font>","")
+          ### Main Spell
+          str_mainspell <- paste0("- Fireball cancelled: ",nrow(fireball_interrupt)) 
+          
+          
+          
+        }
+        
+        ##### + NO SPEC#####
 
+        if(sub_spec=="No Spec"){
+          
+          hitCap <- "NO DATA"
+          str_mainspell <- "NO DATA"
+         # hitSpell <- "NO DATA"
+        }
+        
         ## Hot streaks and Pyros Hotstreaks
         
         insta_pyros_db <- casts %>% 
@@ -1062,47 +1129,29 @@ server <- function(input, output,session) {
         lowest_hp <- min(resources$hitPoints,na.rm=T)
         max_sp <- max(resources$spellPower,na.rm=T)
         mana_end <-  round(min(mana$mana_per,na.rm=T),2)*100
-
-         
-        #### Force Spec if needed ####
-        if (spec=="No Spec" & (
-          sum(
-            grepl("Frostfire Bolt", 
-                  ignite_table_debug$abilityGameID)) > sum(
-                    grepl("Fireball", 
-                          ignite_table_debug$abilityGameID)) 
-        ))
-        {
-          
-          sub_spec <- "FFB"
-          
-        } else if (spec=="No Spec" & (
-          sum(
-            grepl("Frostfire Bolt", 
-                  ignite_table_debug$abilityGameID)) < sum(
-                    grepl("Fireball", 
-                          ignite_table_debug$abilityGameID)) 
-        )){ 
-          
-          sub_spec <- "TTW"
-          
-        } 
+      
+        lb_clipped <- nrow(debuff_table)
+        
+        lb_clipped_alert_1 <- ifelse(lb_clipped==0,"","<font color=\"#BE5350\">")
+        lb_clipped_alert_2 <- ifelse(lb_clipped==0,"","</font>")
         
         ####  Header   ####
         output$summary_header <- renderUI({
-          
+  
+
           HTML(paste(paste0("<h3> Metrics for ",actor_name,
                             " on ",fight_name," - ",
                             sub_spec," ",spec_image,"</h3>"),
                      paste0("<b>Resources through the fight:</b>"),
-                     paste0("Lowest HP%: ",lowest_hp,"% <b>|</b> ",
+                     paste0(alert_hit_1,"Hit: ",hitSpell," / ",hitCap,alert_hit_2," <b>|</b> ",
+                            "Lowest HP%: ",lowest_hp,"% <b>|</b> ",
                             "Highest Spellpower: ",prettyNum(max_sp,big.mark=",",scientific=FALSE)," <b>|</b> ",
                             "Mana at the end of the fight: ",mana_end,"%"), 
                      sep = '<br/>'))
         })
         
         
-        
+         
         if(nchar(enchants)>0){
           
           output$alert_header <- renderUI({
@@ -1114,7 +1163,7 @@ server <- function(input, output,session) {
           
         }
         
-         
+          
         
         ####  Ignite Metrics left  ####  
         
@@ -1244,7 +1293,7 @@ server <- function(input, output,session) {
           str_delay_500 <- paste0("- Delays at >=300ms and <500ms: ",
                                 nrow(casts_fb_pyro %>% filter(delay >= 300 & delay < 500)))
           
-          str_lb_clip <- paste0("- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table))
+          str_lb_clip <- paste0(lb_clipped_alert_1,"- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table),lb_clipped_alert_2)
           
           casts_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_hunter_pet_turtle.jpg' height='20' width='20'/>"
           
@@ -1273,7 +1322,7 @@ server <- function(input, output,session) {
         
         if(max_delay_alert>=500){
           
-          str_delay_2 <- paste0("<font color=\"#D78613\">- Max. Delay:", max_delay_alert, " ms</font><sup>High</sup>")
+          str_delay_2 <- paste0("<font color=\"#D78613\">- Max. Delay:", max_delay_alert, " ms<sup>High</sup></font>")
           
         } else{ 
           str_delay_2 <- paste0("- Max. Delay: ", max_delay_alert, " ms")
@@ -1336,21 +1385,6 @@ server <- function(input, output,session) {
         
         output$cast_metrics_2 <- renderUI({
           
-          
-          str_fb <- paste0("- Fireball cancelled: ",nrow(fireball_interrupt)) 
-          str_ffb <- paste0("- Frostfire Bolt cancelled: ",nrow(frostfirebolt_interrupt))
-          
-          if (sub_spec=="FFB"){
-            str_mainspell <- str_ffb} else if(sub_spec=="TTW"){
-              str_mainspell <- str_fb } else {
-                str_mainspell <- ifelse(sum(grepl("Frostfire Bolt", 
-                                                  ignite_table_debug$abilityGameID)) > sum(grepl("Fireball", 
-                                                                                                 ignite_table_debug$abilityGameID)), 
-                                        str_ffb,
-                                        str_fb) 
-              }
-          
-          
           pyros_per_hotstreak <- round(n_insta_pyros/n_total_hot_streak, digits = 2)
           
           ################### REVIEW ##################
@@ -1364,7 +1398,7 @@ server <- function(input, output,session) {
             
           } else if(pyros_per_hotstreak>2){
             
-            str_hotstreak_pyro <- paste0("<font color=\"#61B661\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>")
+            str_hotstreak_pyro <- paste0("<font color=\"#61B661\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"<sup>High</sup></font>")
   
           } else{
             

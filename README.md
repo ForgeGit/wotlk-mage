@@ -24,12 +24,19 @@ https://wotlk-mage.herokuapp.com/
     - HP/Mana and hit/spellpower across the encounter.
     
 - Notifications and alerts:
+
     - The app will color/notify you if any of the following values are abnormal
+    
           - Severely under or over hitcap.
+          
           - Munching WA not working as TTW.
+          
           - Missing relevant enchants.
+          
           - Living bombs clipped.
+          
           - Sub-optimal use of hotstreaks.
+          
           - Excesive damage lost from ignite not ticking due to target death.
 
 

@@ -436,6 +436,22 @@ extract_log_id <- function(log_input) {
 ############################### SERVER ############################### 
 
 server <- function(input, output,session) {
+  startTime <- Sys.time()
+  
+  autoInvalidate <- reactiveTimer(10000)
+  
+  observe({
+    autoInvalidate()
+    cat(".")
+    
+    if (difftime(Sys.time(), startTime, units = "mins") >= 5) {
+      stopObserver()
+    }
+  })
+  
+  stopObserver <- reactiveVal(function() {
+    stop("Observer stopped after 5 minutes.")
+  })
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   

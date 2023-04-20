@@ -22,7 +22,10 @@ ui <- fluidPage(
       gtag('js', new Date());
       gtag('config', 'G-WPSQCXFWF5');
       "
-    )
+    ),
+    tags$meta(property = "og:title", content = "Wrath Mage Analyzer - Log analysis tools for mages in WOTLK"),
+    tags$meta(property = "og:description", content = "Analyze your mage performance and gameplay on each boss with detailed metrics."),
+    tags$meta(property = "og:image", content = "https://cdn.discordapp.com/emojis/1037039849833767053.png")
   ),
   
   # https://bootswatch.com/slate/

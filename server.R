@@ -1,4 +1,26 @@
 
+color_gradient_green <- function(dt, column_name, gradient_colors = c("#61B661", "#DDDDDD")) {
+  col_func <- colorRampPalette(gradient_colors)
+  dt  %>% 
+    formatStyle(
+      column_name, 
+      backgroundColor = styleEqual(
+        dt$x$data[[column_name]][order(-parse_number(dt$x$data[[column_name]]))],
+        col_func(length(dt$x$data[[column_name]]))
+      )    
+    )
+}
+
+color_gradient_red <- function(dt, column_name, gradient_colors = c("#BE5350", "#DDDDDD")) {
+  col_func <- colorRampPalette(gradient_colors)
+  dt %>% 
+    formatStyle(column_name, 
+                backgroundColor = styleEqual(
+                  sort(unique(dt$x$data[[column_name]]), decreasing = TRUE),
+                  col_func(length(unique(dt$x$data[[column_name]])))
+                )
+    ) 
+}
 #########################################################################################
 options(scipen = 100)
 
@@ -436,23 +458,24 @@ extract_log_id <- function(log_input) {
 ############################### SERVER ############################### 
 
 server <- function(input, output,session) {
-  startTime <- Sys.time()
   
-  autoInvalidate <- reactiveTimer(10000)
-  
-  observe({
-    autoInvalidate()
-    cat(".")
-    
-    if (difftime(Sys.time(), startTime, units = "mins") >= 5) {
-      stopObserver()
-    }
-  })
-  
-  stopObserver <- reactiveVal(function() {
-    stop("Observer stopped after 5 minutes.")
-  })
-  
+   startTime <- Sys.time()
+   
+   autoInvalidate <- reactiveTimer(30000)
+   
+   observe({
+     autoInvalidate()
+     cat(".")
+     
+     if (difftime(Sys.time(), startTime, units = "mins") >= 5) {
+       stopObserver()
+     }
+   })
+   
+   stopObserver <- reactiveVal(function() {
+     stop("Observer stopped after 5 minutes.")
+   })
+   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   
   #### CHANGELOG####
@@ -519,7 +542,88 @@ server <- function(input, output,session) {
     
   })
   
+  #### Leaderboard ####
   
+  gs4_deauth()
+  option_table_list <- list(paging=F, 
+                            columnDefs = list(
+                              list(targets = '_all', className = 'dt-center'),
+                              list( targets = 2 ,width = '50px')),
+                            dom = 't'
+  )
+  
+  table_A <- reactive({
+    t <-  read_sheet(Sys.getenv("LEADERBOARD"),sheet = "A")%>% 
+      datatable(options=option_table_list, escape=F) 
+    
+    t %>% color_gradient_green("Max. Spellpower")
+    
+  })
+  observe({
+    output$table_A_UI <- renderDT(
+      table_A() #,
+      # options=option_table_list,filter="none"
+    )
+    
+  })
+  
+  table_B <- reactive({
+    t <-  read_sheet(Sys.getenv("LEADERBOARD"),sheet = "B")%>% 
+      datatable(options=option_table_list, escape=F) 
+    
+    t %>% color_gradient_green("Hot Streak/Pyro")
+  })
+  
+  observe({
+    table_B()
+    
+    output$table_B_UI <- renderDT(
+      table_B()#,options=option_table_list,filter="none"
+    )
+  })
+  
+  table_C <- reactive({
+    t <-   read_sheet(Sys.getenv("LEADERBOARD"),sheet = "C")%>% 
+      datatable(options=option_table_list, escape=F) 
+    
+    t %>% color_gradient_red("Biggest Munch")
+  })
+  observe({
+    table_C()
+    
+    output$table_C_UI <- renderDT(
+      table_C()#,options=option_table_list,filter="none"
+    )
+  })
+  table_D <- reactive({
+    t <-  read_sheet(Sys.getenv("LEADERBOARD"),sheet = "D")%>% 
+      datatable(options=option_table_list, escape=F) 
+    
+    t %>% color_gradient_green("Biggest Vomit")
+  })
+  
+  observe({
+    table_D()
+    
+    output$table_D_UI <- renderDT(
+      table_D()#,options=option_table_list,filter="none"
+    )
+  })
+  
+  ### Table E
+  table_E <- reactive({
+    t <-   read_sheet(Sys.getenv("LEADERBOARD"),sheet = "E")%>% 
+      datatable(options=option_table_list, escape=F) 
+    
+    t %>% color_gradient_green("Highest ignite tick")
+  })
+  observe({
+    table_E()
+    
+    output$table_E_UI <- renderDT(
+      table_E()#,options=option_table_list,filter="none"
+    )
+  })
   #### Style settings #####
   
   tags$style(HTML("

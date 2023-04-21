@@ -146,47 +146,47 @@ ui <- fluidPage(
       "Consider a donation:",
       br(),
       tags$a(href= "https://ko-fi.com/forge", "Buy me a covfefe! (and help me maintain the app and hosting)"),
-
+      
     ),
     mainPanel(
       tabsetPanel(type = "tabs",
                   tabPanel("Metrics",
-                                       
-                  
-                  fluidRow(
-                    column(width = 12, uiOutput("summary_header"))
-                  ),
-                  fluidRow(
-                    column(width = 12, uiOutput("alert_header"))
-                  ),
-                  br(),
-                  
-                  fluidRow(
-                    column(width = 5, withSpinner(uiOutput("summary_ignite_1"),color="red")),
-                    column(width = 4, uiOutput("summary_ignite_2"))
-                  ),
-                  br(),
-                  fluidRow(
-                    column(width = 5, uiOutput("cast_metrics_1")),
-                    column(width = 4, uiOutput("cast_metrics_2"))
-                  ),
-                  
-                  fluidRow(
-                    column(width = 5, uiOutput("cast_delays_1")),
-                    column(width = 4, uiOutput("cast_delays_2"))
-                  ),
-                  fluidRow(
-                    column(width = 7, uiOutput("extra_algalon"))
-                  ),
-                  fluidRow(
-                    column(width = 12,uiOutput("caption_1"))
-                  ),
-                  fluidRow(
-                    column(width = 12, dataTableOutput("table2"))
-                  ),
-                  fluidRow(
-                    column(width = 12, uiOutput("extra_else"))
-                  )
+                           
+                           
+                           fluidRow(
+                             column(width = 12, uiOutput("summary_header"))
+                           ),
+                           fluidRow(
+                             column(width = 12, uiOutput("alert_header"))
+                           ),
+                           br(),
+                           
+                           fluidRow(
+                             column(width = 5, withSpinner(uiOutput("summary_ignite_1"),color="red")),
+                             column(width = 4, uiOutput("summary_ignite_2"))
+                           ),
+                           br(),
+                           fluidRow(
+                             column(width = 5, uiOutput("cast_metrics_1")),
+                             column(width = 4, uiOutput("cast_metrics_2"))
+                           ),
+                           
+                           fluidRow(
+                             column(width = 5, uiOutput("cast_delays_1")),
+                             column(width = 4, uiOutput("cast_delays_2"))
+                           ),
+                           fluidRow(
+                             column(width = 7, uiOutput("extra_algalon"))
+                           ),
+                           fluidRow(
+                             column(width = 12,uiOutput("caption_1"))
+                           ),
+                           fluidRow(
+                             column(width = 12, dataTableOutput("table2"))
+                           ),
+                           fluidRow(
+                             column(width = 12, uiOutput("extra_else"))
+                           )
                   ),
                   tabPanel("Changelog",
                            uiOutput("Changelog")
@@ -195,9 +195,45 @@ ui <- fluidPage(
                            fluidRow(
                              column(width = 10, uiOutput("FAQ"))
                            )
-                           
+                  ),
+                  tabPanel("Scoreboard",
+                           fluidRow(      br(),
+                                          
+                                          h4("Last update: ", Sys.Date()),
+                                          br(),
+                                          column(width = 5, withSpinner(DTOutput("table_A_UI"),color="red")
+                                          )) ,
+                           fluidRow(      br(),
+                                          
+                                         # h4("Highest Pyro to Hotstreak ratio"),
+                                          
+                                          column(width = 5, DTOutput("table_B_UI"))
+                                          
+                           ),
+                           fluidRow(      br(),
+                                          
+                                         # h4("Biggest munch recorded"),
+                                          
+                                          column(width = 5, DTOutput("table_C_UI"))
+                                          
+                           ),
+                           fluidRow(      br(),
+                                          
+                                         # h4("Biggest vomit recorded"),
+                                          
+                                          column(width = 5, DTOutput("table_D_UI"))
+                                          
+                           ),
+                           fluidRow(      br(),
+                                          
+                                        #  h4("Biggest ignite tick recorded"),
+                                          
+                                          column(width = 5, DTOutput("table_E_UI"))
+                                          
+                           )
                   )
       )
     )
   )
 )
+  

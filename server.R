@@ -11,16 +11,19 @@ color_gradient_green <- function(dt, column_name, gradient_colors = c("#61B661",
     )
 }
 
+
 color_gradient_red <- function(dt, column_name, gradient_colors = c("#BE5350", "#DDDDDD")) {
   col_func <- colorRampPalette(gradient_colors)
-  dt %>% 
-    formatStyle(column_name, 
-                backgroundColor = styleEqual(
-                  sort(unique(dt$x$data[[column_name]]), decreasing = TRUE),
-                  col_func(length(unique(dt$x$data[[column_name]])))
-                )
-    ) 
+  dt  %>% 
+    formatStyle(
+      column_name, 
+      backgroundColor = styleEqual(
+        dt$x$data[[column_name]][order(parse_number(dt$x$data[[column_name]]))],
+        col_func(length(dt$x$data[[column_name]]))
+      )    
+    )
 }
+
 #########################################################################################
 options(scipen = 100)
 

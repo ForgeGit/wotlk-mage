@@ -733,8 +733,12 @@ server <- function(input, output,session) {
   observeEvent(input$submit_log_id, {
     
     #####+ Actor display ####
-    
-    if(is.data.frame(actors())==TRUE){
+    if(doctor_pressence()=="TRUE"){
+      
+      updateSelectInput(session, "character", choices = actors()$name)
+
+      
+    } else if(is.data.frame(actors())==TRUE){
       
       mages <- actors() %>% 
         filter(subType=="Mage") %>% 

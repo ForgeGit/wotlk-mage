@@ -310,9 +310,9 @@ ignite_cleaning <- function(x) {
     
     ## Ignite chunks https://github.com/ForgeGit/ignite_wotlk#part-2---ignite-chunks
     mutate(IGNITE_END =  ifelse(lag(abilityGameID)=="Ignite" &  
-                                   lag(abilityGameID,2)=="Ignite",
-                                 "START",
-                                 "NA"),
+                                  lag(abilityGameID,2)=="Ignite",
+                                "START",
+                                "NA"),
            IGNITE_END = cumsum(replace_na(IGNITE_END,"NA")=="START")) %>%
     
     group_by(fight,
@@ -462,23 +462,23 @@ extract_log_id <- function(log_input) {
 
 server <- function(input, output,session) {
   
-   startTime <- Sys.time()
-   
-   autoInvalidate <- reactiveTimer(30000)
-   
-   observe({
-     autoInvalidate()
-     cat(".")
-     
-     if (difftime(Sys.time(), startTime, units = "mins") >= 5) {
-       stopObserver()
-     }
-   })
-   
-   stopObserver <- reactiveVal(function() {
-     stop("Observer stopped after 5 minutes.")
-   })
-   
+  startTime <- Sys.time()
+  
+  autoInvalidate <- reactiveTimer(30000)
+  
+  observe({
+    autoInvalidate()
+    cat(".")
+    
+    if (difftime(Sys.time(), startTime, units = "mins") >= 5) {
+      stopObserver()
+    }
+  })
+  
+  stopObserver <- reactiveVal(function() {
+    stop("Observer stopped after 5 minutes.")
+  })
+  
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   
   #### CHANGELOG####
@@ -508,7 +508,7 @@ server <- function(input, output,session) {
                sep = '<br/>'))
     
     
-})
+  })
   #### FAQ ####
   output$FAQ <- renderUI({
     
@@ -667,10 +667,12 @@ server <- function(input, output,session) {
   
   
   doctor_pressence <-eventReactive(input$submit_log_id, { #IS DR BOOM PRESENT?
-  
-  if(
-    any(actors()$name %in% c("Dr. Boom")) ==T){"TRUE"} else{"FALSE"}
-
+    
+    if(any(actors()$name %in% c("Dr. Boom","Deathstalker Vincent", "Gordok Spirit")) ==T){
+      "TRUE"
+    } else{
+      "FALSE"
+    }
     
   })
   
@@ -736,7 +738,7 @@ server <- function(input, output,session) {
     if(doctor_pressence()=="TRUE"){
       
       updateSelectInput(session, "character", choices = actors()$name)
-
+      
       
     } else if(is.data.frame(actors())==TRUE){
       
@@ -813,7 +815,7 @@ server <- function(input, output,session) {
     output$alert_header <- renderUI({ HTML(paste(paste0("")))})
     
     ##### + Parse fight ID ####
-     
+    
     fight_name <- input$fight
     
     if(doctor_pressence()=="TRUE"){
@@ -823,7 +825,10 @@ server <- function(input, output,session) {
         select(id)
       
       fight_temp <- fight_temp$id[1]
-      fight_name="Dr. Boom"
+      
+      if(c("Dr. Boom") %in% actors()$name  == T){
+        fight_name="Dr. Boom"} else if(c("Deathstalker Vincent") %in% actors()$name == T) {
+          fight_name="Deathstalker Vincent"} else {fight_name= "Gordok Spirit"}
     }else {
       fight_temp <- parse_number(fight_name)
     }
@@ -843,7 +848,7 @@ server <- function(input, output,session) {
     }else {
       actor_temp <- parse_number(actor_name)
     }
-   
+    
     #### + All casts extraction ####
     casts <- WCL_API2_request(sprintf(request_cast, 
                                       as.character(extract_log_id(as.character(input$log_id))), 
@@ -861,9 +866,9 @@ server <- function(input, output,session) {
     ignite_pressence <- any(grepl(12654, casts$abilityGameID))
     
     if(pre_combatant_trigger==F & doctor_pressence()=="FALSE"){
- 
+      
       ####+ Spec detection ####
-       
+      
       spec <- data.frame(arcane_tree=c(0),fire_tree=c(0),frost_tree=c(0))
       
       combatinfo <- WCL_API2_request(
@@ -872,7 +877,7 @@ server <- function(input, output,session) {
                 as.numeric(fight_temp),  # Fight ID
                 as.numeric(actor_temp))  # Actor ID
       )$data$reportData$report$events$data
- 
+      
       
     } else if (pre_combatant_trigger==T){
       
@@ -881,11 +886,11 @@ server <- function(input, output,session) {
       
     } else { 
       combatinfo <- vector(length = 0)
-      }
-
-     
-    if(length(combatinfo)!=0){ 
+    }
     
+    
+    if(length(combatinfo)!=0){ 
+      
       spec_temp <-  combatinfo$talents[[1]][[1]]
       
       spec$arcane_tree[1] = spec_temp[1]
@@ -897,13 +902,13 @@ server <- function(input, output,session) {
       spec <- spec %>% mutate(   
         spec = ifelse(arcane_tree>fire_tree & arcane_tree>frost_tree,"Arcane",
                       ifelse(fire_tree>arcane_tree & fire_tree>frost_tree,"Fire","Frost")))
-       
+      
       
       spec <- as.character(spec$spec[1])
-     # rm(spec_temp)
+      # rm(spec_temp)
       
     } else {
- 
+      
       spec <- "No Spec"
       
     }
@@ -912,16 +917,16 @@ server <- function(input, output,session) {
     
     # Fire mages only from here onward
     # Have to change for frost ignite spec (Pending Hodir log)
-
+    
     if(spec=="Fire" | ignite_pressence == T | doctor_pressence()=="TRUE" ){
       
       ###### Enchants & Hit metrics ######
       
       if(doctor_pressence()=="FALSE" & spec=="Fire"){
-         
+        
         combatinfo <- combatinfo %>% 
           filter(type=="combatantinfo") 
-          
+        
         enchants <- combatinfo$gear[[1]] %>%
           mutate(icon = str_extract(icon,"(?<=inv_)[A-Za-z ]+"),
                  permanentEnchant = as.character(permanentEnchant),
@@ -942,27 +947,27 @@ server <- function(input, output,session) {
           pull(permanentEnchant) %>%
           paste(collapse = ",") %>%
           str_to_sentence() 
-          
         
-          hitSpell <- combatinfo %>% 
-            pull(hitSpell) 
-           
-          Draenei_buff <- combatinfo %>% 
-            pull(auras) %>% 
-            `[[`(1) %>% 
-            filter(ability == 28878) %>% 
-            mutate(Draenei_buff = ifelse(nrow(.) >= 1, paste0("<sup>[-26]</sup>", "<img src='https://wow.zamimg.com/images/wow/icons/large/inv_helmet_21.jpg' height='15' width='15'/>"), "")) %>% 
-            slice(1) %>%
-            pull(Draenei_buff) %>% 
-            toString()
-          
-          
+        
+        hitSpell <- combatinfo %>% 
+          pull(hitSpell) 
+        
+        Draenei_buff <- combatinfo %>% 
+          pull(auras) %>% 
+          `[[`(1) %>% 
+          filter(ability == 28878) %>% 
+          mutate(Draenei_buff = ifelse(nrow(.) >= 1, paste0("<sup>[-26]</sup>", "<img src='https://wow.zamimg.com/images/wow/icons/large/inv_helmet_21.jpg' height='15' width='15'/>"), "")) %>% 
+          slice(1) %>%
+          pull(Draenei_buff) %>% 
+          toString()
+        
+        
       } else { 
         enchants = "NO DATA"
         Draenei_buff = ""
-        }
+      }
       
-    
+      
       ###### Targets detection ####
       
       targetID_code <- actors() %>%
@@ -980,7 +985,7 @@ server <- function(input, output,session) {
                  !(name %in% ## Names are searched based on "Single Names" - Using "Algalon" will keep "Algalon the Observer".
                      npc_exclusions)) %>% ## Sometimes, "Hodir" and "Hodir's Wrath" exist. We want the wrath away.
         select(id,name) 
-       
+      
       #### Sub-spec detection ####
       if(spec!="No Spec"){
         
@@ -999,7 +1004,7 @@ server <- function(input, output,session) {
         sub_spec <- spec   
         spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
       }
-  
+      
       if(length(combatinfo)!=0){ 
         
         if(spec_temp[3]>spec_temp[2] & ignite_pressence==T){
@@ -1043,7 +1048,7 @@ server <- function(input, output,session) {
         
         #### Force Spec if needed ####
         
-       sum_ffb_cast <-  sum(
+        sum_ffb_cast <-  sum(
           grepl("Frostfire Bolt", 
                 ignite_table_debug$abilityGameID))
         
@@ -1073,7 +1078,7 @@ server <- function(input, output,session) {
           
           filter(abilityGameID ==55360 & 
                    type == "refreshdebuff")
-
+        
         ### Cast gaps extraction
         
         # casts <- WCL_API2_request(sprintf(request_cast, 
@@ -1136,7 +1141,7 @@ server <- function(input, output,session) {
             mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
                                              type=="begincast",
                                            "Interrupted","OK")) %>% filter(flag_interrupt=="Interrupted")
-    
+          
           ### FFB Hit Cap
           Draenei_buff<- ifelse(exists("Draenei_buff") | !is.na(Draenei_buff),Draenei_buff,"")
           
@@ -1172,7 +1177,7 @@ server <- function(input, output,session) {
                                              type=="begincast",
                                            "Interrupted","OK")) %>% 
             filter(flag_interrupt=="Interrupted")
-      
+          
           ### TTW Hit Cap
           Draenei_buff<- ifelse(exists("Draenei_buff") | !is.na(Draenei_buff),Draenei_buff,"")
           hitCap <- paste0("367",Draenei_buff)
@@ -1180,7 +1185,7 @@ server <- function(input, output,session) {
           realhitCap <- ifelse(nchar(Draenei_buff)>3, 341, 367)
           
           alert_hit_1 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-50,
-                              "<font color=\"#BE5350\">","")
+                                "<font color=\"#BE5350\">","")
           alert_hit_2 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-50,
                                 "</font>","")
           ### Main Spell
@@ -1191,12 +1196,12 @@ server <- function(input, output,session) {
         }
         
         ##### + NO SPEC#####
-
+        
         if(sub_spec=="No Spec"){
           
           hitCap <- "NO DATA"
           str_mainspell <- "NO DATA"
-         # hitSpell <- "NO DATA"
+          # hitSpell <- "NO DATA"
         }
         
         ## Hot streaks and Pyros Hotstreaks
@@ -1226,7 +1231,7 @@ server <- function(input, output,session) {
         insta_pyros_db <- left_join(insta_pyros_db, 
                                     df_casts_per_set, by = "set")
         
-         
+        
         ### Hot Streaks
         
         hot_streak_n <- casts %>% 
@@ -1282,7 +1287,7 @@ server <- function(input, output,session) {
         
         mana_end <-  ifelse(nchar(dead)>2, paste0("<font color=\"#BE5350\">Dead (",mana_end_n,"%)</font>"),
                             paste0(mana_end_n,"%"))
-      
+        
         lb_clipped <- nrow(debuff_table)
         
         lb_clipped_alert_1 <- ifelse(lb_clipped==0,"","<font color=\"#BE5350\">")
@@ -1292,10 +1297,13 @@ server <- function(input, output,session) {
         ignite_lost_alert_1 <- ifelse(ignite_lost_sadge>=30000 & ignite_lost_sadge<=50000 & targetID_code$name[1]!="Hodir","<font color=\"#D78613\">",
                                       ifelse(ignite_lost_sadge>50000 & targetID_code$name[1]!="Hodir","<font color=\"#BE5350\">",""))  ## I need a better way to show this 
         ignite_lost_alert_2 <- ifelse(ignite_lost_sadge>=30000 & targetID_code$name[1]!="Hodir","</font>","") ## I need a better way to show this 
+        
+        
+        drboomalert <- ifelse(doctor_pressence()==T,"<font color=\"#D78613\">READ: You are testing with Dr. Boom/Vincent as dummies. Use at your own risk and interpret carefully. Dr. Boom has unreliable results on the delay metrics because it is in the OPEN WORLD. Tests done inside INSTANCES are more accurate and reliable, since that is the behaviour you will have in a raid. For delay metric testing, I strongly suggest testing at Shadowfang Keep with Vincent. (Alliance only)</font>","") 
         ####  Header   ####
         output$summary_header <- renderUI({
-  
-
+          
+          
           HTML(paste(paste0("<h3> Metrics for ",actor_name,
                             " on ",fight_name," - ",
                             sub_spec," ",spec_image,"</h3>"),
@@ -1303,12 +1311,13 @@ server <- function(input, output,session) {
                      paste0(alert_hit_1,"Hit: ",hitSpell," / ",hitCap,alert_hit_2," <b>|</b> ",
                             "Lowest HP%: ",lowest_hp,"% <b>|</b> ",
                             "Highest Spellpower: ",prettyNum(max_sp,big.mark=",",scientific=FALSE)," <b>|</b> ",
-                            "End-of-fight mana: ",mana_end), 
+                            "End-of-fight mana: ",mana_end),
+                     drboomalert,
                      sep = '<br/>'))
         })
         
         
-         
+        
         if(nchar(enchants)>0){
           
           output$alert_header <- renderUI({
@@ -1320,13 +1329,13 @@ server <- function(input, output,session) {
           
         }
         
-          
+        
         
         ####  Ignite Metrics left  ####  
         
         output$summary_ignite_1 <- renderUI({
           
-
+          
           str1 <- paste0( "- Expected ignite damage<sup>*</sup>: ",  prettyNum((round(ignite_table$Total_Ignite_Dmg_Potential)),big.mark=",",scientific=FALSE))
           str2 <- paste0( "- Actual ignite damage dealt<sup>*</sup>: ",  prettyNum((ignite_total_dealt),big.mark=",",scientific=FALSE))
           str4 <- paste0(prettyNum((ignite_total_dealt),big.mark=",",scientific=FALSE), " - ",
@@ -1368,7 +1377,7 @@ server <- function(input, output,session) {
             sep = '<br/>'))
           
         })
-         
+        
         ####  Ignite Metrics right  ####  
         
         output$summary_ignite_2 <- renderUI({
@@ -1385,7 +1394,7 @@ server <- function(input, output,session) {
             sep = '<br/>'))
           
         })
-
+        
         ####  Cast Metrics delay left  ####  
         
         output$cast_delays_1 <- renderUI({
@@ -1447,7 +1456,7 @@ server <- function(input, output,session) {
                                 nrow(casts_fb_pyro %>% filter(delay >= 100 & delay < 300)))
           
           str_delay_500 <- paste0("- Delays at >=300ms and <500ms: ",
-                                nrow(casts_fb_pyro %>% filter(delay >= 300 & delay < 500)))
+                                  nrow(casts_fb_pyro %>% filter(delay >= 300 & delay < 500)))
           
           str_lb_clip <- paste0(lb_clipped_alert_1,"- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table),lb_clipped_alert_2)
           
@@ -1474,23 +1483,23 @@ server <- function(input, output,session) {
         
         output$cast_delays_2 <- renderUI({
           
-        max_delay_alert<- max(casts_fb_pyro$delay,na.rm=T)  
-        
-        if(max_delay_alert>=500){
+          max_delay_alert<- max(casts_fb_pyro$delay,na.rm=T)  
           
-          str_delay_2 <- paste0("<font color=\"#D78613\">- Max. Delay:", max_delay_alert, " ms<sup>High</sup></font>")
-          
-        } else{ 
-          str_delay_2 <- paste0("- Max. Delay: ", max_delay_alert, " ms")
-          
+          if(max_delay_alert>=500){
+            
+            str_delay_2 <- paste0("<font color=\"#D78613\">- Max. Delay:", max_delay_alert, " ms<sup>High</sup></font>")
+            
+          } else{ 
+            str_delay_2 <- paste0("- Max. Delay: ", max_delay_alert, " ms")
+            
           }
-        
-        
+          
+          
           
           
           
           str_delay_1 <- paste0("- Avg. Delay: ", as.integer(mean(casts_fb_pyro$delay,na.rm=T))," ms")
-
+          
           str_delay_3 <- paste0("- Min Delay: ", min(casts_fb_pyro$delay,na.rm=T) , " ms")
           str_delay_4 <- paste0("- Total Insta-Pyros (after fireball): ", nrow(casts_fb_pyro))
           str_delay_5 <- paste0("- Median Delay: ", as.integer(median(casts_fb_pyro$delay,na.rm=T))," ms")
@@ -1524,7 +1533,7 @@ server <- function(input, output,session) {
           
           str_pyro_canned <- paste0("- Pyroblasts cancelled/interrupted: ",nrow(pyro_interrupt)) 
           str_pyro_hard <- paste0("- Pyroblasts hard-cast: ",n_total_pyro_hard_cast)
-
+          
           
           HTML(paste(
             paste0("<h4> <b>",fblast_img," Cast Metrics (Encounter-wide, All Targets)</h4> </b>"),
@@ -1546,8 +1555,8 @@ server <- function(input, output,session) {
           ################### REVIEW ##################
           if(pyros_per_hotstreak<1 & boss_name_singular %in% c("General","Hodir","Freya")){
             
-          str_hotstreak_pyro <- paste0("<font color=\"#D78613\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>" )
-        
+            str_hotstreak_pyro <- paste0("<font color=\"#D78613\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>" )
+            
           } else if(pyros_per_hotstreak<1){
             
             str_hotstreak_pyro <- paste0("<font color=\"#BE5350\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"</font>")
@@ -1555,12 +1564,12 @@ server <- function(input, output,session) {
           } else if(pyros_per_hotstreak>2){
             
             str_hotstreak_pyro <- paste0("<font color=\"#61B661\">- # Pyros per Hot Streak: ",pyros_per_hotstreak,"<sup>High</sup></font>")
-  
+            
           } else{
             
             str_hotstreak_pyro <- paste0("- # Pyros per Hot Streak: ",pyros_per_hotstreak)
           }
-            
+          
           
           str_hotstreak_n <- paste0("- # Hot Streaks (Buff): ",n_total_hot_streak)
           str_4pct8 <- paste0("- # 4pcT8 Pyros used: ", round(n_insta_pyros-n_total_hot_streak, digits = 2))
@@ -1626,51 +1635,51 @@ server <- function(input, output,session) {
         
         ###### Leaderboard ####
         if(fight_name != "Dr. Boom"){
-        #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
-        #   water <- URLencode(as.character(water))
-        #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
-        #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
-        #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
-        #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
-        #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
-        url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
-                      as.character(extract_log_id(as.character(input$log_id))),
-                      "&entry.96171645=",
-                      sapply(strsplit(actor_name, " "), `[`, 1),
-                      "&entry.1179038397=",
-                      round(ignite_table$Munch_NET_2)*-1 ,
-                      "&entry.1734686763=",
-                      round(n_insta_pyros/n_total_hot_streak, digits = 2),
-                      "&entry.1228481340=",
-                      boss_name_singular,
-                      "&entry.1629132558=",
-                      median(casts_fb_pyro$delay,na.rm=T),
-                      "&entry.1806850293=",
-                      mean(casts_fb_pyro$delay,na.rm=T),
-                      "&entry.1724070192=",
-                      nrow(debuff_table),
-                      "&entry.1899085980=",
-                      max(ignite_table_debug$igniteSUB_resist),
-                      "&entry.303429649=",
-                      ignite_total_dealt,
-                      "&entry.1911698108=",
-                      sub_spec,
-                      "&entry.1948745936=",
-                      as.numeric(nrow(Marked_Data)),
-                      "&entry.1124325413=",
-                      max_sp,
-                      "&entry.2031855061=",
-                      nchar(enchants),
-                      "&entry.1370589148=",
-                      ignite_lost_sadge
-                      )
-        
-        
-        #nrow(Marked_Data)
-        
-        
-        res <- POST(url = url)
-        
+          #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
+          #   water <- URLencode(as.character(water))
+          #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+          #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+          #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+          #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+          #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+          url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
+                        as.character(extract_log_id(as.character(input$log_id))),
+                        "&entry.96171645=",
+                        sapply(strsplit(actor_name, " "), `[`, 1),
+                        "&entry.1179038397=",
+                        round(ignite_table$Munch_NET_2)*-1 ,
+                        "&entry.1734686763=",
+                        round(n_insta_pyros/n_total_hot_streak, digits = 2),
+                        "&entry.1228481340=",
+                        boss_name_singular,
+                        "&entry.1629132558=",
+                        median(casts_fb_pyro$delay,na.rm=T),
+                        "&entry.1806850293=",
+                        mean(casts_fb_pyro$delay,na.rm=T),
+                        "&entry.1724070192=",
+                        nrow(debuff_table),
+                        "&entry.1899085980=",
+                        max(ignite_table_debug$igniteSUB_resist),
+                        "&entry.303429649=",
+                        ignite_total_dealt,
+                        "&entry.1911698108=",
+                        sub_spec,
+                        "&entry.1948745936=",
+                        as.numeric(nrow(Marked_Data)),
+                        "&entry.1124325413=",
+                        max_sp,
+                        "&entry.2031855061=",
+                        nchar(enchants),
+                        "&entry.1370589148=",
+                        ignite_lost_sadge
+          )
+          
+          
+          #nrow(Marked_Data)
+          
+          
+          res <- POST(url = url)
+          
         }
         #writesheet("user1", 700)  
         
@@ -1765,9 +1774,9 @@ server <- function(input, output,session) {
     }
     
     ### STEP 3: Table debug ####
-
-    observeEvent(input$debug_id, {
     
+    observeEvent(input$debug_id, {
+      
       output$table2 <- renderDataTable({
         
         ignite_table_debug %>% 

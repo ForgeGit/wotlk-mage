@@ -35,7 +35,8 @@ boss_list <- c(757, #Alga
                749, #Kologarn
                745, #Ignis
                751, #Hodir
-               753
+               753,
+               101107:101120
 ) 
 
 npc_exclusions <- c("Hodir's Fury",
@@ -48,7 +49,9 @@ npc_exclusions <- c("Hodir's Fury",
                     "Auriaya Feral Defender Stalker",
                     "Thorim's Hammer",
                     "Thorim Event Bunny",
-                    "Freya's Ward")
+                    "Freya's Ward",
+                    "Grobbulus Cloud",
+                    "Maexxna Spiderling")
 #########################################################################################
 url <- "https://classic.warcraftlogs.com/api/v2"
 
@@ -711,6 +714,20 @@ server <- function(input, output,session) {
                                            encounterID_2 == '745'  ~ 'Ignis',
                                            encounterID_2 == '751'  ~ 'Hodir',
                                            encounterID_2 == '753'  ~ 'Freya',
+                                           encounterID_2 == '101107'  ~ "Anub'Rekhan",
+                                           encounterID_2 == '101108'  ~ 'Gluth',
+                                           encounterID_2 == '101109'  ~ 'Gothik the Harvester',
+                                           encounterID_2 == '101110'  ~ 'Grand Widow Faerlina',
+                                           encounterID_2 == '101111'  ~ 'Grobbulus	',
+                                           encounterID_2 == '101112'  ~ 'Heigan the Unclean',
+                                           encounterID_2 == '101113'  ~ 'Instructor Razuvious',
+                                           encounterID_2 == '101114'  ~ "Kel'Thuzad",
+                                           encounterID_2 == '101115'  ~ 'Loatheb',
+                                           encounterID_2 == '101116'  ~ 'Maexxna',
+                                           encounterID_2 == '101117'  ~ 'Noth the Plaguebringer',
+                                           encounterID_2 == '101118'  ~ 'Patchwerk',
+                                           encounterID_2 == '101119'  ~ 'Sapphiron',
+                                           encounterID_2 == '101120'  ~ 'Thaddius',
                                            
                                            TRUE ~ encounterID_2),
                  
@@ -840,7 +857,7 @@ server <- function(input, output,session) {
     if(doctor_pressence()=="TRUE"){
       
       actor_temp<- actors() %>% 
-        filter(name==actor_name  | id ==parse_number(input$character)) %>% 
+        filter(name==actor_name  | id == parse_number(input$character)) %>% 
         select(id)
       
       actor_temp <- actor_temp$id[1]

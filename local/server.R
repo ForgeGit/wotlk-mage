@@ -793,7 +793,7 @@ server <- function(input, output,session) {
     
     ##### + Fights display #####
     
-    if(is.data.frame(fights())==TRUE){
+    if(is.data.frame(fights())==TRUE & !is.null(fights())){
       
       if(max(fights()$encounterID)>0){
         

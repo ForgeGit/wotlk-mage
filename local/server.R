@@ -698,7 +698,7 @@ server <- function(input, output,session) {
         fights
       } else if(max(fights$encounterID)>0) {
         
-        fights %>% 
+        fights <-  fights %>% 
           filter(encounterID!=0) %>% 
           
           filter(encounterID %in% boss_list) %>% 
@@ -736,6 +736,12 @@ server <- function(input, output,session) {
                                         paste0(encounterID_2, " (Fight:",id," - Kill)")
                  )
           )
+        
+        if(nrow(fights)==0){ 
+          "NO DATA"
+        } else {
+          fights
+        }
         
       }else{
         "NO DATA"

@@ -115,7 +115,7 @@ ui <- fluidPage(
       br(),
       "- The app currently supports only a limited number of bosses",
       br(),
-      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale. Partially Freya)",
+      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale. Partially Freya. All of Naxx except 4H)",
       br(),
       tags$span(HTML("<span style='color:#D78613;'>If you happen to encounter any issues with an encounter or log, feel free to reach out to me on Discord.</span>")),
       br(),

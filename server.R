@@ -799,7 +799,7 @@ server <- function(input, output,session) {
         updateSelectInput(session, "fight", choices = "NO BOSS FIGHTS")
       }
       
-    } else if(is.data.frame(fights())==FALSE & actors()!="NO DATA") {
+    } else if(is.data.frame(fights())==FALSE & !("NO DATA" %in% actors())) {
       ###### Modal Error 2 ######
       showModal(error_diag(error2,2))
       updateSelectInput(session, "fight", choices = fights())

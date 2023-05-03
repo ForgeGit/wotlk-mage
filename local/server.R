@@ -558,78 +558,62 @@ server <- function(input, output,session) {
                             dom = 't'
   )
   
-  table_A <- reactive({
-    t <-  read_sheet(Sys.getenv("LEADERBOARD"),sheet = "A")%>% 
-      datatable(options=option_table_list, escape=F) 
-    
-    t %>% color_gradient_green("Max. Spellpower")
-    
+########################################################  
+  
+  lead_table <- reactive({
+   read_sheet(Sys.getenv("LEADERBOARD"),sheet = "Sheet2")
   })
+  
+  
   observe({
+    
     output$table_A_UI <- renderDT(
-      table_A() #,
-      # options=option_table_list,filter="none"
+      lead_table() %>%  as.data.frame() %>%
+        filter(df=="Spellpower") %>% 
+        select(-c(df)) %>%
+        rename(`Max. Spellpower` = measure) %>% 
+        datatable(options=option_table_list, escape=F)  %>% 
+        color_gradient_green("Max. Spellpower")
     )
-    
-  })
-  
-  table_B <- reactive({
-    t <-  read_sheet(Sys.getenv("LEADERBOARD"),sheet = "B")%>% 
-      datatable(options=option_table_list, escape=F) 
-    
-    t %>% color_gradient_green("Hot Streak/Pyro")
-  })
-  
-  observe({
-    table_B()
     
     output$table_B_UI <- renderDT(
-      table_B()#,options=option_table_list,filter="none"
+      lead_table() %>% 
+        filter(df=="Hotstreak") %>% 
+        select(-c(df)) %>%
+        rename(`Hot Streak/Pyro` = measure) %>% 
+        datatable(options=option_table_list, escape=F)  %>% 
+        color_gradient_green("Hot Streak/Pyro")
     )
-  })
-  
-  table_C <- reactive({
-    t <-   read_sheet(Sys.getenv("LEADERBOARD"),sheet = "C")%>% 
-      datatable(options=option_table_list, escape=F) 
-    
-    t %>% color_gradient_red("Biggest Munch")
-  })
-  observe({
-    table_C()
     
     output$table_C_UI <- renderDT(
-      table_C()#,options=option_table_list,filter="none"
-    )
-  })
-  table_D <- reactive({
-    t <-  read_sheet(Sys.getenv("LEADERBOARD"),sheet = "D")%>% 
-      datatable(options=option_table_list, escape=F) 
-    
-    t %>% color_gradient_green("Biggest Vomit")
-  })
-  
-  observe({
-    table_D()
+      lead_table() %>% 
+        filter(df=="Munch") %>% 
+        select(-c(df)) %>%
+        rename(`Biggest Munch` = measure) %>% 
+        datatable(options=option_table_list, escape=F)  %>% 
+        color_gradient_red("Biggest Munch")
+    )    
     
     output$table_D_UI <- renderDT(
-      table_D()#,options=option_table_list,filter="none"
+      lead_table() %>% 
+        filter(df=="Vomit") %>% 
+        select(-c(df)) %>%
+        rename(`Biggest Vomit` = measure) %>% 
+        datatable(options=option_table_list, escape=F)  %>% 
+        color_gradient_green("Biggest Vomit")
+    )
+    
+    output$table_E_UI <- renderDT(
+      lead_table() %>% 
+        filter(df=="Ignite tick") %>% 
+        select(-c(df)) %>%
+        rename(`Highest ignite tick` = measure) %>% 
+        datatable(options=option_table_list, escape=F)  %>% 
+        color_gradient_green("Highest ignite tick")
     )
   })
   
-  ### Table E
-  table_E <- reactive({
-    t <-   read_sheet(Sys.getenv("LEADERBOARD"),sheet = "E")%>% 
-      datatable(options=option_table_list, escape=F) 
-    
-    t %>% color_gradient_green("Highest ignite tick")
-  })
-  observe({
-    table_E()
-    
-    output$table_E_UI <- renderDT(
-      table_E()#,options=option_table_list,filter="none"
-    )
-  })
+  
   #### Style settings #####
   
   tags$style(HTML("
@@ -819,7 +803,11 @@ server <- function(input, output,session) {
       ###### Modal Error 2 ######
       showModal(error_diag(error2,2))
       updateSelectInput(session, "fight", choices = fights())
-    }
+    } else { 
+      ###### Modal Error 2 ######
+      showModal(error_diag(error2,2))
+      updateSelectInput(session, "fight", choices = fights())
+      }
     
   })
   

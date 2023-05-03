@@ -488,6 +488,8 @@ server <- function(input, output,session) {
   output$Changelog <- renderUI({
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
+               paste0("- 04/05/2023: Naxxramas bosses support added (except Four Horseman)"),
+               paste0("- 03/05/2023: Support for Vincent and Gordok Spirit added. (See FAQ)"),
                paste0("- 18/04/2023: Missing enchant notification for most slots added."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Resource metrics added (HP/Mana/SP)."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;App supports 'no spec' on logs as long as you had 1 ignite tick on target."),
@@ -530,13 +532,18 @@ server <- function(input, output,session) {
                '<br/>',
                paste0("<b>- How do I fix munching?:</b>"),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; You can't fix it, but you can use some workarounds with the use of Weakauras and macros to minimize its effects."),
-               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Consider asking at the <a href='https://github.com/ForgeGit/ignite_wotlk'>Mage Discord.</a> for a proper explanation on the available options. "),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Consider asking at the <a href='https://discord.gg/eszwRckRmA'>Mage Discord.</a> for a proper explanation on the available options. "),
                '<br/>',
                
                paste0("<b>- Can I use this to test at Dr. Boom/Training Dummies?:</b>"),
-               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Dr. Boom testing is enabled. If Dr. Boom is present in your log, it should allow you to select a timestamp as a fight."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Dr. Boom, Vincent (Alliance-only) and Gordok Spirit testing is enabled."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; If any of those mobs is present in your log, you should be able to analyze each fight with them."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; I do not have plans at the moment to include Dummies due to their buggy nature and weird inconsistent results in the past."),
-               paste0("&nbsp;&nbsp;&nbsp;&nbsp; <i>Note: Weakauras, addons, or some spell interactions could work differently in instances vs open-world. Consider this when testing @ Dr. Boom</i>"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; If you are testing WAs for munching, consider they are only reliable when instanced in a dungeon or raid."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; You cannot reliably test your delay length or the reliability of these weakauras in the open world (this includes Dr. Boom)"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Open world servers batch spells differently, and they make the WA functions less consistent."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; Vincent and Gordok Spirit are USELESS for measuring vomit/munch, they are only useful to test delays between fireballs and pyroblasts."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; <i>Note: 'Vincent' is a mob in Shadowfang Keep that alliance can hit. Is immortal. Similarly, you can go to the end of Dire Maul North. In the last room around the last boss, there are 'Gordok Spirits' that can be used as dummies.</i>"),
                '<br/>',
                
                paste0("<b>- What about Frost/Arcane Mages?:</b>"),

@@ -534,6 +534,13 @@ server <- function(input, output,session) {
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; You can't fix it, but you can use some workarounds with the use of Weakauras and macros to minimize its effects."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; Consider asking at the <a href='https://discord.gg/eszwRckRmA'>Mage Discord.</a> for a proper explanation on the available options. "),
                '<br/>',
+               paste0("<b>- Main Spell Queue Window Issues::</b>"),
+               paste0('&nbsp;&nbsp;&nbsp;&nbsp; Run the following command: /dump GetCVar("SpellQueueWindow").'),
+               paste0('&nbsp;&nbsp;&nbsp;&nbsp; If the result is a value significantly lower than "400", you might be creating a lot of gaps between your casts.'),
+               paste0('&nbsp;&nbsp;&nbsp;&nbsp; In order to fix it, please use the following: /console SpellQueueWindow 400.'),
+               paste0('&nbsp;&nbsp;&nbsp;&nbsp; This will restore your Spell Queue Window to 400, and the gaps should be near 0ms.'),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp; If you are not sure what any of this means, but the analyzer says you have issues, please ask at the <a href='https://discord.gg/eszwRckRmA'>Mage Discord.</a> for assistance or DM me."),
+               '<br/>',
                
                paste0("<b>- Can I use this to test at Dr. Boom/Training Dummies?:</b>"),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; Dr. Boom, Vincent (Alliance-only) and Gordok Spirit testing is enabled."),
@@ -1114,6 +1121,20 @@ server <- function(input, output,session) {
           mutate(delay = timestamp-lag(timestamp)) %>%
           filter(delay<750)
         
+        ### SQW ohno
+        
+        casts_SQW <- casts %>% 
+          filter((abilityGameID==42833 | abilityGameID==47610) & 
+                   (type=="cast" | 
+                   type=="begincast") & 
+                   (targetID==as.numeric(targetID_code$id[1]) | targetID==-1)
+          ) %>% 
+          select(timestamp,type) %>% 
+          mutate(delay = timestamp-lag(timestamp)) %>%
+          filter(type=="begincast" & delay <500)
+  
+        median_cast_SQW <- median(casts_SQW$delay,na.rm = T)
+
         ######## Pyroblasts cancelled/interrupted #######
         main_pyro <- casts %>% 
           filter(abilityGameID==42891 & 
@@ -1121,7 +1142,7 @@ server <- function(input, output,session) {
                        c("damage","refreshdebuff",
                          "applydebuff","removedebuff")) 
           )
-        
+         
         pyro_interrupt <- main_pyro %>%
           mutate(flag_interrupt = ifelse(lead(type)=="begincast" & 
                                            type=="begincast",
@@ -1147,7 +1168,7 @@ server <- function(input, output,session) {
         
         rm(main_pyro)
         ##### + FFB MAGE SECTION #####
-        
+         
         if(sub_spec=="FFB"){
           
           ######## FFB cancelled/interrupted  #######
@@ -1179,8 +1200,22 @@ server <- function(input, output,session) {
           ### Main Spell
           str_mainspell <- paste0("- Frostfire Bolt cancelled: ",nrow(frostfirebolt_interrupt))
           
+          
+          
+          if(as.integer(median_cast_SQW)<5){
+            
+            str_casts_SQW <- paste0("- Frostfire Bolt  Queue Time (Median): ",median_cast_SQW)
+            str_cast_sqw_outlier <- paste0("- Frostfire Bolt  Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
+            
+          }else{
+            
+            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Median):",median_cast_SQW,"<sup>Check the FAQ!</sup></font>")
+            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Outliers):", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"<sup>Check the FAQ!</sup></font>" )
+            
+          }
+          
         }
-        
+         
         ##### + Fireball MAGE SECTION #####
         
         if(sub_spec=="TTW"){
@@ -1213,6 +1248,18 @@ server <- function(input, output,session) {
           
           
           
+          if(median_cast_SQW<5){
+            
+            str_casts_SQW <- paste0("- Fireball Queue Time (Median): ",median_cast_SQW)
+            str_cast_sqw_outlier <- paste0("- Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
+            
+          }else{
+            
+            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Median): ",median_cast_SQW,"<sup>Check the FAQ!</sup></font>")
+            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"<sup>Check the FAQ!</sup></font>" )
+            
+          }
+           
         }
         
         ##### + NO SPEC#####
@@ -1251,7 +1298,7 @@ server <- function(input, output,session) {
         insta_pyros_db <- left_join(insta_pyros_db, 
                                     df_casts_per_set, by = "set")
         
-        
+         
         ### Hot Streaks
         
         hot_streak_n <- casts %>% 
@@ -1414,7 +1461,7 @@ server <- function(input, output,session) {
             sep = '<br/>'))
           
         })
-        
+          
         ####  Cast Metrics delay left  ####  
         
         output$cast_delays_1 <- renderUI({
@@ -1426,9 +1473,9 @@ server <- function(input, output,session) {
             
             ### Alert for 0ms casts
             if( (nrow(casts_fb_pyro %>% 
-                      filter(delay == 0)) / nrow(casts_fb_pyro) ) > 0.25 & 
+                      filter(delay == 0)) / nrow(casts_fb_pyro) ) > 0.15 & 
                 (nrow(casts_fb_pyro %>% 
-                      filter(delay == 0)) / nrow(casts_fb_pyro) ) < 0.50 & 
+                      filter(delay == 0)) / nrow(casts_fb_pyro) ) < 0.40 & 
                 sub_spec=="TTW"){
               
               str_delay_5 <- paste0("<font color=\"#D78613\"> - Delays at 0ms: ", 
@@ -1438,7 +1485,7 @@ server <- function(input, output,session) {
               str_alert <- paste0("<font color=\"#D78613\">Your munching prevention method might be failing ocasionally.<sup>4</sup></font>")
               
             } else if((nrow(casts_fb_pyro %>% 
-                            filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.50  & 
+                            filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.40  & 
                       sub_spec=="TTW"){
               
               str_delay_5 <- paste0("<font color=\"#BE5350\"> - Delays at 0ms: ", 
@@ -1483,11 +1530,14 @@ server <- function(input, output,session) {
           casts_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_hunter_pet_turtle.jpg' height='20' width='20'/>"
           
           
+          
           HTML(paste(
             paste0("<h4> <b>",casts_img," Cast metrics (Main Target only)</b> </h4>"),
             paste0("<b>Living Bomb metrics:</b>"),
             str_lb_clip,
             "<br/",
+            "<br/",
+            
             paste0("<b>Milliseconds between Fireball and Pyroblast casts (<750ms):</b>"),
             str_delay_5,
             str_delay_6,
@@ -1515,9 +1565,6 @@ server <- function(input, output,session) {
           }
           
           
-          
-          
-          
           str_delay_1 <- paste0("- Avg. Delay: ", as.integer(mean(casts_fb_pyro$delay,na.rm=T))," ms")
           
           str_delay_3 <- paste0("- Min Delay: ", min(casts_fb_pyro$delay,na.rm=T) , " ms")
@@ -1527,8 +1574,9 @@ server <- function(input, output,session) {
           
           HTML(paste(paste0(""),
                      "<br/",
-                     "<br/",
-                     "<br/",
+                     paste0("<b>Main Spell Queue Window :</b>"),
+                     str_casts_SQW,
+                     str_cast_sqw_outlier,
                      "<br/",
                      "<br/",
                      str_delay_1,
@@ -1691,12 +1739,15 @@ server <- function(input, output,session) {
                         "&entry.2031855061=",
                         nchar(enchants),
                         "&entry.1370589148=",
-                        ignite_lost_sadge
+                        ignite_lost_sadge,
+                        "&entry.1929065299=",
+                        median_cast_SQW ,
+                        "&entry.1143266=",
+                        nrow(casts_SQW[ casts_SQW$delay != 0, ])
           )
           
           
           #nrow(Marked_Data)
-          
           
           res <- POST(url = url)
           

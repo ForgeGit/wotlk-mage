@@ -488,8 +488,11 @@ server <- function(input, output,session) {
   output$Changelog <- renderUI({
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
-               paste0("- 04/05/2023: Naxxramas bosses support added (except Four Horseman)"),
-               paste0("- 03/05/2023: Support for Vincent and Gordok Spirit added. (See FAQ)"),
+               paste0("- 04/05/2023: App performance improvements"),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Spell queue window metrics added."),
+               paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='https://ko-fi.com/home/coffeeshop?ReturnUrl=/&txid=546d1bb6-8308-4e4c-90a9-c1679e8dbe82'>Thanks Lulank for his donation towards Snake Weaving technology (by Ducks and Amyy)</a>"),
+               paste0("- 03/05/2023: Naxxramas bosses support added (except Four Horseman)"),
+               paste0("- 02/05/2023: Support for Vincent and Gordok Spirit added. (See FAQ)"),
                paste0("- 18/04/2023: Missing enchant notification for most slots added."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Resource metrics added (HP/Mana/SP)."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;App supports 'no spec' on logs as long as you had 1 ignite tick on target."),
@@ -1204,12 +1207,12 @@ server <- function(input, output,session) {
           
           if(as.integer(median_cast_SQW)<5){
             
-            str_casts_SQW <- paste0("- Frostfire Bolt  Queue Time (Median): ",median_cast_SQW)
+            str_casts_SQW <- paste0("- Frostfire Bolt  Queue Time (Median): ",median_cast_SQW," ms")
             str_cast_sqw_outlier <- paste0("- Frostfire Bolt  Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
             
           }else{
             
-            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Median):",median_cast_SQW,"<sup>Check the FAQ!</sup></font>")
+            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Median):",median_cast_SQW,"ms <sup>Check the FAQ!</sup></font>")
             str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Outliers):", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"<sup>Check the FAQ!</sup></font>" )
             
           }
@@ -1250,12 +1253,12 @@ server <- function(input, output,session) {
           
           if(median_cast_SQW<5){
             
-            str_casts_SQW <- paste0("- Fireball Queue Time (Median): ",median_cast_SQW)
+            str_casts_SQW <- paste0("- Fireball Queue Time (Median): ",median_cast_SQW;" ms")
             str_cast_sqw_outlier <- paste0("- Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
             
           }else{
             
-            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Median): ",median_cast_SQW,"<sup>Check the FAQ!</sup></font>")
+            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Median): ",median_cast_SQW," ms <sup>Check the FAQ!</sup></font>")
             str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"<sup>Check the FAQ!</sup></font>" )
             
           }

@@ -262,7 +262,7 @@ ignite_cleaning <- function(x) {
            abilityGameID, 
            amount,unmitigatedAmount, hitType) %>%
     
-    filter( (hitType!=1 &  hitType!=16) | abilityGameID == 12654) %>%
+    filter( (hitType!=1 &  hitType!=16) | (abilityGameID == 12654  | abilityGameID ==413843)) %>%
     
     filter( !(abilityGameID %in% spell_filter) & 
               abilityGameID != 42845 & abilityGameID != 38703 & #AM x2
@@ -281,6 +281,7 @@ ignite_cleaning <- function(x) {
                                 abilityGameID == '44461' ~ 'Living Bomb R1 tick',
                                 abilityGameID == '55361' ~ 'Living Bomb R2',
                                 abilityGameID == '12654' ~ 'Ignite',
+                                abilityGameID == '413843' ~ 'Ignite2',
                                 abilityGameID == '42833' ~ 'Fireball',
                                 abilityGameID == '42832' ~ 'Fireball R15',
                                 abilityGameID == '38692' ~ 'Fireball R14',
@@ -312,8 +313,8 @@ ignite_cleaning <- function(x) {
     group_by(fight,sourceID,targetID) %>% 
     
     ## Ignite chunks https://github.com/ForgeGit/ignite_wotlk#part-2---ignite-chunks
-    mutate(IGNITE_END =  ifelse(lag(abilityGameID)=="Ignite" &  
-                                  lag(abilityGameID,2)=="Ignite",
+    mutate(IGNITE_END =  ifelse( (lag(abilityGameID)=="Ignite" | lag(abilityGameID)=="Ignite2") &  
+                                  (lag(abilityGameID,2)=="Ignite" | lag(abilityGameID,2)=="Ignite2"),
                                 "START",
                                 "NA"),
            IGNITE_END = cumsum(replace_na(IGNITE_END,"NA")=="START")) %>%
@@ -323,11 +324,11 @@ ignite_cleaning <- function(x) {
     
     
     ## Ignite values for each chunk
-    mutate(igniteADD = ifelse(abilityGameID!="Ignite", 
+    mutate(igniteADD = ifelse( abilityGameID!="Ignite" & abilityGameID!="Ignite2", 
                               amount*0.4,0), # Rounding
-           igniteSUB = ifelse(abilityGameID=="Ignite", 
+           igniteSUB = ifelse(abilityGameID=="Ignite" | abilityGameID=="Ignite2", 
                               unmitigatedAmount,0), 
-           igniteSUB_resist = ifelse(abilityGameID=="Ignite", 
+           igniteSUB_resist = ifelse(abilityGameID=="Ignite" | abilityGameID=="Ignite2", 
                                      amount,0),
            
            igniteSUB= ifelse(is.na(igniteSUB),0,igniteSUB), 
@@ -350,24 +351,24 @@ ignite_cleaning <- function(x) {
       igniteREM = igniteCUM-igniteDIM,
       
       trueIgnite = as.character(
-        ifelse(abilityGameID=="Ignite" &  
+        ifelse((abilityGameID=="Ignite" |   abilityGameID=="Ignite2") &
                  (as.integer(igniteSUB) ==  as.integer(round(lag(igniteREM)) / 2) |
                     as.integer(igniteSUB) + 1 ==  as.integer(round(lag(igniteREM)) / 2) |
                     as.integer(igniteSUB) - 1 ==  as.integer(round(lag(igniteREM)) / 2)|
                     as.integer(igniteSUB) + 2 ==  as.integer(round(lag(igniteREM)) / 2) |
                     as.integer(igniteSUB) - 2 ==  as.integer(round(lag(igniteREM)) / 2)) &  
-                 lag(abilityGameID)!="Ignite",
+                 (lag(abilityGameID)!="Ignite" | lag(abilityGameID)!="Ignite2"),
                "YES", 
-               ifelse(abilityGameID=="Ignite" &   
+               ifelse((abilityGameID=="Ignite" |   abilityGameID=="Ignite2") &
                         (as.integer(igniteSUB) !=  as.integer(round(lag(igniteREM)) / 2) |
                            as.integer(igniteSUB) + 1 !=  as.integer(round(lag(igniteREM)) / 2) |
                            as.integer(igniteSUB) - 1 !=  as.integer(round(lag(igniteREM)) / 2)|
                            as.integer(igniteSUB) + 2 !=  as.integer(round(lag(igniteREM)) / 2) |
                            as.integer(igniteSUB) - 2 !=  as.integer(round(lag(igniteREM)) / 2)) &  
-                        lag(abilityGameID)!="Ignite",
+                        (lag(abilityGameID)!="Ignite" | lag(abilityGameID)!="Ignite2"),
                       "NO",
-                      ifelse(abilityGameID=="Ignite" &  
-                               lag(abilityGameID)=="Ignite",
+                      ifelse((abilityGameID=="Ignite" |   abilityGameID=="Ignite2") &
+                               (lag(abilityGameID)!="Ignite" | lag(abilityGameID)!="Ignite2"),
                              "END",NA)))
       ),
       
@@ -399,7 +400,7 @@ ignite_cleaning <- function(x) {
     group_by(fight,
              sourceID,targetID) %>%
     mutate(
-      igniteREM_IRL =  ifelse(abilityGameID=="Ignite",
+      igniteREM_IRL =  ifelse(abilityGameID=="Ignite" | abilityGameID=="Ignite2",
                               igniteSUB,
                               ifelse(lag(replace_na(trueIgnite,"NA"))=="END",
                                      0,

@@ -1319,7 +1319,7 @@ server <- function(input, output,session) {
         ignite_lost_alert_2 <- ifelse(ignite_lost_sadge>=30000 & targetID_code$name[1]!="Hodir","</font>","") ## I need a better way to show this 
         
         
-        drboomalert <- ifelse(doctor_pressence()==T,"<font color=\"#D78613\">READ: You are testing with Dr. Boom/Vincent as dummies. Use at your own risk and interpret carefully. Dr. Boom has unreliable results on the delay metrics because it is in the OPEN WORLD. Tests done inside INSTANCES are more accurate and reliable, since that is the behaviour you will have in a raid. For delay metric testing, I strongly suggest testing at Shadowfang Keep with Vincent. (Alliance only)</font>","") 
+        drboomalert <- ifelse(doctor_pressence()==T,"<font color=\"#D78613\">READ: You are testing under a non-raid context. Interpret results carefully. Dr. Boom has unreliable results on the delay metrics because it is in the OPEN WORLD. Tests done inside INSTANCES are more accurate and reliable for your DELAY metrics. READ THE FAQ</font>","") 
         ####  Header   ####
         output$summary_header <- renderUI({
           
@@ -1363,12 +1363,12 @@ server <- function(input, output,session) {
                          " = ",
                          prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
           
-          if(Munch_NET_result > 0 & Munch_NET_result >= 10) { 
+          if(Munch_NET_result > 0 & Munch_NET_result >= 20) { 
             ## Vomit trigger
             str5 <- paste0("<font color=\"#61B661\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
                            " more than expected. <br> This means VOMIT was present at some point.</b></font>")
             ## Munch Trigger
-          } else if(Munch_NET_result < 0 & Munch_NET_result<= -10){ 
+          } else if(Munch_NET_result < 0 & Munch_NET_result<= -20){ 
             str5 <- paste0("<font color=\"#BE5350\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
                            " less than expected. <br> This means MUNCH was present at some point.</b></font>")
             ## Expected ignite
@@ -1426,9 +1426,9 @@ server <- function(input, output,session) {
             
             ### Alert for 0ms casts
             if( (nrow(casts_fb_pyro %>% 
-                      filter(delay == 0)) / nrow(casts_fb_pyro) ) > 0 & 
+                      filter(delay == 0)) / nrow(casts_fb_pyro) ) > 0.25 & 
                 (nrow(casts_fb_pyro %>% 
-                      filter(delay == 0)) / nrow(casts_fb_pyro) ) < 0.30 & 
+                      filter(delay == 0)) / nrow(casts_fb_pyro) ) < 0.50 & 
                 sub_spec=="TTW"){
               
               str_delay_5 <- paste0("<font color=\"#D78613\"> - Delays at 0ms: ", 
@@ -1438,7 +1438,7 @@ server <- function(input, output,session) {
               str_alert <- paste0("<font color=\"#D78613\">Your munching prevention method might be failing ocasionally.<sup>4</sup></font>")
               
             } else if((nrow(casts_fb_pyro %>% 
-                            filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.30  & 
+                            filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.50  & 
                       sub_spec=="TTW"){
               
               str_delay_5 <- paste0("<font color=\"#BE5350\"> - Delays at 0ms: ", 
@@ -1615,7 +1615,7 @@ server <- function(input, output,session) {
             "<br/",
             paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
             paste0("<i><sup>2</sup> # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
-            paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left)</i>"), 
+            paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left) - Sometimes your WA might fail due to logging error, and not really because of the WA. One out of 10-20 casts is likely a false positive.</i>"), 
             paste0("<i><sup>5</sup> Hot Streaks not fully used. Not fully consumed before it got 'refreshed'. i.e. You got hot streak while you had hot streak.</i>"), 
             paste0("<i><sup>*</sup> Before partial resists.</i>"), 
             sep = '<br/>'))

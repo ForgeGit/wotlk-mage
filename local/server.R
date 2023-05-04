@@ -467,7 +467,7 @@ server <- function(input, output,session) {
   
   startTime <- Sys.time()
   
-  autoInvalidate <- reactiveTimer(30000)
+  autoInvalidate <- reactiveTimer(45000)
   
   observe({
     autoInvalidate()
@@ -478,9 +478,9 @@ server <- function(input, output,session) {
     }
   })
   
-  stopObserver <- reactiveVal(function() {
+  stopObserver <- function() {
     stop("Observer stopped after 5 minutes.")
-  })
+  }
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   
@@ -1033,7 +1033,7 @@ server <- function(input, output,session) {
         } 
       }
       
-      rm(combatinfo)
+      rm(combatinfo) # Last usage
       
       #### Damage (Main Target only) ####
       damage <- casts %>% 
@@ -1046,6 +1046,8 @@ server <- function(input, output,session) {
         ignite_table_debug <- damage %>% 
           filter(targetID==as.numeric(targetID_code$id[1])& sourceID==as.numeric(actor_temp)) %>% # Source ID for pets like pumpkin
           ignite_cleaning() # See Algalon C9t67a4LWNqpvmcj 
+        
+        rm(damage) # Last usage
         
         ignite_table <- ignite_table_debug %>%
           ignite_summary()
@@ -1083,7 +1085,7 @@ server <- function(input, output,session) {
           sub_spec <- "TTW"
           hitSpell <- "NO DATA"
         } 
-        rm(sum_fb_cast,sum_ffb_cast)
+        rm(sum_fb_cast,sum_ffb_cast) # Last usage
         
         #### Debuff LB extraction ####
         debuff_table <- WCL_API2_request(
@@ -1476,7 +1478,7 @@ server <- function(input, output,session) {
           str_delay_500 <- paste0("- Delays at >=300ms and <500ms: ",
                                   nrow(casts_fb_pyro %>% filter(delay >= 300 & delay < 500)))
           
-          str_lb_clip <- paste0(lb_clipped_alert_1,"- Living Bombs clipped<sup>2</sup>: ", nrow(debuff_table),lb_clipped_alert_2)
+          str_lb_clip <- paste0(lb_clipped_alert_1,"- Living Bombs clipped<sup>2</sup>: ", lb_clipped,lb_clipped_alert_2)
           
           casts_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_hunter_pet_turtle.jpg' height='20' width='20'/>"
           
@@ -1675,7 +1677,7 @@ server <- function(input, output,session) {
                         "&entry.1806850293=",
                         mean(casts_fb_pyro$delay,na.rm=T),
                         "&entry.1724070192=",
-                        nrow(debuff_table),
+                        lb_clipped,
                         "&entry.1899085980=",
                         max(ignite_table_debug$igniteSUB_resist),
                         "&entry.303429649=",

@@ -1205,7 +1205,7 @@ server <- function(input, output,session) {
           
           
           
-          if(as.integer(median_cast_SQW)<5){
+          if(as.integer(median_cast_SQW)<15){
             
             str_casts_SQW <- paste0("- Frostfire Bolt  Queue Time (Median): ",median_cast_SQW," ms")
             str_cast_sqw_outlier <- paste0("- Frostfire Bolt  Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
@@ -1213,7 +1213,7 @@ server <- function(input, output,session) {
           }else{
             
             str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Median):",median_cast_SQW,"ms <sup>Check the FAQ!</sup></font>")
-            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Outliers):", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"<sup>Check the FAQ!</sup></font>" )
+            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Outliers):", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"</font>" )
             
           }
           
@@ -1251,7 +1251,7 @@ server <- function(input, output,session) {
           
           
           
-          if(median_cast_SQW<5){
+          if(median_cast_SQW<15){
             
             str_casts_SQW <- paste0("- Fireball Queue Time (Median): ",median_cast_SQW," ms")
             str_cast_sqw_outlier <- paste0("- Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
@@ -1259,7 +1259,7 @@ server <- function(input, output,session) {
           }else{
             
             str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Median): ",median_cast_SQW," ms <sup>Check the FAQ!</sup></font>")
-            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"<sup>Check the FAQ!</sup></font>" )
+            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"</font>" )
             
           }
            

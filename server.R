@@ -1253,7 +1253,7 @@ server <- function(input, output,session) {
           
           if(median_cast_SQW<5){
             
-            str_casts_SQW <- paste0("- Fireball Queue Time (Median): ",median_cast_SQW;" ms")
+            str_casts_SQW <- paste0("- Fireball Queue Time (Median): ",median_cast_SQW," ms")
             str_cast_sqw_outlier <- paste0("- Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
             
           }else{

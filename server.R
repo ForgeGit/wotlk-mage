@@ -1134,11 +1134,28 @@ server <- function(input, output,session) {
                    (targetID==as.numeric(targetID_code$id[1]) | targetID==-1)
           ) %>% 
           select(timestamp,type) %>% 
-          mutate(delay = timestamp-lag(timestamp)) %>%
+          mutate(delay = timestamp-lag(timestamp),
+                 type = ifelse(type=="cast" & delay<1000, "cast_subgcd",type),
+                 type = ifelse(type=="begincast" & lead(type)=="cast_subgcd", "begincast_subgcd",type)) %>%
           filter(type=="begincast" & delay <500)
   
         median_cast_SQW <- median(casts_SQW$delay,na.rm = T)
-
+        
+        #### GCD Cap
+        casts_GCD <- casts %>% 
+          filter((abilityGameID==42833 | abilityGameID==47610) & 
+                   (type=="cast" | 
+                      type=="begincast") & 
+                   (targetID==as.numeric(targetID_code$id[1]) | targetID==-1)
+          ) %>% 
+          select(timestamp,type) %>% 
+          mutate(delay = timestamp-lag(timestamp),
+                 type = ifelse(type=="cast" & delay<1000, "cast_subgcd",type),
+                 type = ifelse(type=="begincast" & lead(type)=="cast_subgcd", "begincast_subgcd",type)) %>%
+          filter(type=="cast_subgcd")
+        casts_GCD <- nrow(casts_GCD)
+        
+        
         ######## Pyroblasts cancelled/interrupted #######
         main_pyro <- casts %>% 
           filter(abilityGameID==42891 & 
@@ -1204,6 +1221,15 @@ server <- function(input, output,session) {
           ### Main Spell
           str_mainspell <- paste0("- Frostfire Bolt cancelled: ",nrow(frostfirebolt_interrupt))
           
+          if(casts_GCD>0){
+            
+          str_casts_GCD <- paste0("<font color=\"#BE5350\">- Frostfire Bolt haste GCD capped: ",nrow(casts_GCD),"</font>")
+          
+          }else{
+            str_casts_GCD <- paste0("- Frostfire Bolt haste GCD capped: ",nrow(casts_GCD))
+            
+            
+          }
           
           
           if(as.integer(median_cast_SQW)<15){
@@ -1217,6 +1243,9 @@ server <- function(input, output,session) {
             str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Outliers):", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"</font>" )
             
           }
+          
+          
+          
           
         }
          
@@ -1251,6 +1280,15 @@ server <- function(input, output,session) {
           str_mainspell <- paste0("- Fireball cancelled: ",nrow(fireball_interrupt)) 
           
           
+          if(casts_GCD>0){
+            
+            str_casts_GCD <- paste0("<font color=\"#BE5350\">- Fireball haste GCD capped: ",casts_GCD,"</font>")
+            
+          }else{
+            str_casts_GCD <- paste0("- Fireball haste GCD capped: ",casts_GCD)
+            
+            
+          }
           
           if(median_cast_SQW<15){
             
@@ -1541,6 +1579,7 @@ server <- function(input, output,session) {
             str_lb_clip,
             "<br/",
             "<br/",
+            "<br/",
             
             paste0("<b>Milliseconds between Fireball and Pyroblast casts (<750ms):</b>"),
             str_delay_5,
@@ -1581,8 +1620,10 @@ server <- function(input, output,session) {
                      paste0("<b>Main Spell Queue Window :</b>"),
                      str_casts_SQW,
                      str_cast_sqw_outlier,
+                     str_casts_GCD,
                      "<br/",
                      "<br/",
+                     
                      str_delay_1,
                      str_delay_2,
                      str_delay_3,

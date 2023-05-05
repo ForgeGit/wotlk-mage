@@ -1,5 +1,6 @@
 ui <- fluidPage(
-  tags$head(tags$link(rel="shortcut icon", href="https://cdn.discordapp.com/attachments/1091572489009758309/1096172475550810183/ourignite2.ico")),
+  # tags$head(tags$link(rel="shortcut icon", href="https://cdn.discordapp.com/attachments/1091572489009758309/1096172475550810183/ourignite2.ico")),
+  tags$head(tags$link(rel="shortcut icon", href="https://cdn.discordapp.com/attachments/244901735515029504/1104018362931085353/dbfbe586e724f4a0cd993d0c1048316b.ico")),
   
   tags$style(HTML("
     h4, .h4 {

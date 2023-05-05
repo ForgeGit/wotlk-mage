@@ -489,6 +489,7 @@ server <- function(input, output,session) {
   output$Changelog <- renderUI({
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
+               paste0("- 05/05/2023: Added 'GCD Cap' detection"),
                paste0("- 04/05/2023: App performance improvements"),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Spell queue window metrics added."),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='https://ko-fi.com/home/coffeeshop?ReturnUrl=/&txid=546d1bb6-8308-4e4c-90a9-c1679e8dbe82'>Thanks Lulank for his donation towards Snake Weaving technology (by Ducks and Amyy)</a>"),
@@ -1223,10 +1224,10 @@ server <- function(input, output,session) {
           
           if(casts_GCD>0){
             
-          str_casts_GCD <- paste0("<font color=\"#BE5350\">- Frostfire Bolt haste GCD capped: ",nrow(casts_GCD),"</font>")
+          str_casts_GCD <- paste0("<font color=\"#BE5350\">- Frostfire Bolt haste GCD capped: ",casts_GCD,"</font>")
           
           }else{
-            str_casts_GCD <- paste0("- Frostfire Bolt haste GCD capped: ",nrow(casts_GCD))
+            str_casts_GCD <- paste0("- Frostfire Bolt haste GCD capped: ",casts_GCD)
             
             
           }

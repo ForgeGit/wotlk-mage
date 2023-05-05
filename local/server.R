@@ -1224,7 +1224,7 @@ server <- function(input, output,session) {
           
           if(casts_GCD>0){
             
-          str_casts_GCD <- paste0("<font color=\"#BE5350\">- Frostfire Bolt haste GCD capped: ",casts_GCD,"</font>")
+          str_casts_GCD <- paste0("<font color=\"#D78613\">- Frostfire Bolt haste GCD capped: ",casts_GCD,"</font>")
           
           }else{
             str_casts_GCD <- paste0("- Frostfire Bolt haste GCD capped: ",casts_GCD)
@@ -1283,7 +1283,7 @@ server <- function(input, output,session) {
           
           if(casts_GCD>0){
             
-            str_casts_GCD <- paste0("<font color=\"#BE5350\">- Fireball haste GCD capped: ",casts_GCD,"</font>")
+            str_casts_GCD <- paste0("<font color=\"#D78613\">- Fireball haste GCD capped: ",casts_GCD,"</font>")
             
           }else{
             str_casts_GCD <- paste0("- Fireball haste GCD capped: ",casts_GCD)
@@ -1789,7 +1789,9 @@ server <- function(input, output,session) {
                         "&entry.1929065299=",
                         median_cast_SQW ,
                         "&entry.1143266=",
-                        nrow(casts_SQW[ casts_SQW$delay != 0, ])
+                        nrow(casts_SQW[ casts_SQW$delay != 0, ]),
+                        "&entry.1655361760=",
+                        casts_GCD
           )
           
           

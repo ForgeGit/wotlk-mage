@@ -1955,16 +1955,21 @@ server <- function(input, output,session) {
             mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE)) %>%
             ungroup() %>%
             pivot_longer(cols=starts_with("ID"))
-           
+          
           b <- casts %>% 
             filter(as.integer(abilityGameID)==48090 & type != "refreshbuff")%>% 
             mutate(timestamp = (timestamp/1000)-min(a$timestamp,na.rm = T))
           
-
+          if(nrow(b) == 0){
+            b <- data.frame(timestamp = c(0,
+                                          max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
+                            type=c("applybuff","removebuff"))  
+            }
+          
           # Add missing pairs
           b <- addPairs(b,a)
           
-           
+          
           b<- b %>% 
             select(timestamp,type) %>% 
             mutate(timestamp = as.integer(timestamp)) %>%
@@ -1975,7 +1980,7 @@ server <- function(input, output,session) {
           # mutate(applybuff = applybuff/1000-min(a$timestamp),
           #    removebuff = removebuff/1000-min(a$timestamp))
           
-         # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
+          # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
           #step_pred <- predict(step_fit, a)
            
           ggplot() +

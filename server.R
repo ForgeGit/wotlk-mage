@@ -1863,182 +1863,189 @@ server <- function(input, output,session) {
             
           })
           
-          observe({
             
-            output$plot_DP <- renderPlot({     
-              ##############################################################
-              #####DEMONIC PACT ############
-              
-              DP_actors <- actors() %>% 
-                filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
-                select(id)
-              # mutate(name = paste0(name, " (ID:",id,")"))
-              
-          
-          # 165 = flametongue at 144 + (7*3)
-          # 280 wrath
-          # 46 food buff
-          # 326 = food + wrath
-          ############################################
-          ###### Request encounters available for each log
-          IDsDP <- unique(DP_actors$id)
-          
-          request_encounter <- sprintf(request_cast_2, as.character(extract_log_id(as.character(input$log_id))),
-                                       as.numeric(fight_temp),
-                                       IDsDP,
-                                       IDsDP)
-          a <- lapply(seq_along(request_encounter), function(i) {  
+            DP_actors <- actors() %>% 
+              filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
+              select(id)
+            # mutate(name = paste0(name, " (ID:",id,")"))
             
-            response <- WCL_API2_request(request_encounter[i])$data$reportData$report$events$data
+            ##############################################################
+            #####DEMONIC PACT ############
             
-            if(length(response) != 0) {
-              
-              # response <- rename(response,fightID = id)
-              
-            } else {
-              # response <- rename(response,fightID = id)
-            }
-            return(response)
-          })
-          rm(request_encounter)
-          a <- do.call(bind_rows, a)
-          
-          a_temp <- a %>% 
-            filter(type=="combatantinfo")
-          
-          if(nrow(a_temp)>0){
-            a_temp <- a_temp %>%
-            select(type,sourceID,auras)
-          a_temp <-   do.call(bind_rows, a_temp$auras) %>%
-            filter(ability==57399)} else { 
-              
-              a_temp <- data.frame(source=as.integer(0))
-              }
-          
-          
-          a <-  a %>% 
-            filter(sourceID==targetID & 
-                     !is.na(spellPower) & 
-                     lead(timestamp) != timestamp & 
-                     targetID %in% IDsDP) %>%
-            select(timestamp,#type,
-                   #sourceID,
-                   targetID,
-                   # abilityGameID,
-                   spellPower) 
-          
-          
-          
-          desired_names <- a %>%
-            filter(spellPower == 46| spellPower ==326| spellPower == 211| spellPower == 190) %>%
-            distinct(targetID) %>%
-            pull(targetID)
-          
-          desired_names <- unique(union(desired_names, a_temp$source))
-          rm(a_temp)
-          
-          a <- a %>%
-            mutate(spellPower = ifelse(targetID %in% desired_names, spellPower - 46, spellPower),
-                   targetID = paste0("ID",targetID),
-                   timestamp = timestamp/1000) %>%
-            pivot_wider(names_from = targetID,
-                        values_from = spellPower) %>% 
-            arrange(timestamp) %>%
-            fill(starts_with("ID"),.direction="up") %>%
-            # replace(is.na(.), 0) %>% 
-            mutate(timestamp=round(timestamp))%>%
-            group_by(timestamp)  %>%
-            summarise(across(starts_with("ID"), mean, na.rm = TRUE)) %>%
-            rowwise() %>%
-            mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE)) %>%
-            ungroup() %>%
-            pivot_longer(cols=starts_with("ID"))
-          
-          b <- casts %>% 
-            filter(abilityGameID==48090 & type != "refreshbuff")%>% 
-            mutate(timestamp = (timestamp/1000)-min(a$timestamp,na.rm = T))
-          
+            
+            # 165 = flametongue at 144 + (7*3)
+            # 280 wrath
+            # 46 food buff
+            # 326 = food + wrath
+            ############################################
+            ###### Request encounters available for each log
+            IDsDP <- unique(DP_actors$id)
+            
+            request_encounter <- sprintf(request_cast_2, as.character(extract_log_id(as.character(input$log_id))),
+                                         as.numeric(fight_temp),
+                                         IDsDP,
+                                         IDsDP)
 
-          # Add missing pairs
-          b <- addPairs(b)
-          
-          
-          b<- b %>% 
-            select(timestamp,type) %>% 
-            mutate(timestamp = as.integer(timestamp)) %>%
-            group_by(type) %>%
-            mutate(row = row_number()) %>%
-            pivot_wider(names_from=type, values_from=timestamp)%>% 
-            ungroup()# %>%
-          # mutate(applybuff = applybuff/1000-min(a$timestamp),
-          #    removebuff = removebuff/1000-min(a$timestamp))
-          
-         # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
-          #step_pred <- predict(step_fit, a)
-          
-          ggplot() +
-            geom_point(data=a %>% 
-                         mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
-                       aes(timestamp, value),alpha = 0.1, color="black", fill=NA, size = 2) +
-            geom_smooth(data=a %>% 
-                          mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
-                        aes(timestamp, value,linetype="Trend line"), span = 0.05,
-                        size=1.25,
-                        color = "#3586C4", fill = "#A7D4F6") +
-            geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
-                                    ymin = -Inf, ymax = Inf,colour="DP Uptime"),
-                      fill = "#B0B0F7",lwd=0, alpha = 0.25)  + 
-            theme_bw()  + 
             
-            labs(x = "Timestamp (Seconds)",
-                 y = "Spellpower",
-            ) + 
-            geom_step(data=a %>% 
-                        mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
-                      aes(timestamp, max_value,colour="Estimated\nSpellpower"), size=1.05) +
             
-            scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
-                               expand = expansion(mult = c(0, 0))) +
-            
-            scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,50))+
-            geom_hline(aes(linetype="Mean"),yintercept = mean(a$max_value,na.rm=T),
-                       color = "#D036B3", alpha = 1,
-                       size=1.25, linetype =2) +
-            
-            scale_colour_manual("", 
-                                breaks = c("DP Uptime", "Estimated\nSpellpower"),
-                                values = c("DP Uptime"="#ba87ee", "Estimated\nSpellpower"="#6464E1")) +
-            scale_linetype_manual("", 
-                                  breaks = c("Trend line"),
-                                  values = c("Trend line"=3)) +
-            
-            guides(color = guide_legend(
-              title = paste0("Mean SP:",round(mean(a$max_value,na.rm=T))),
-              override.aes = list(
-                linetype = c(0, 1),
-                size = c(1, 1),
-                color = c("#B0B0F7", "#8788EE"),
-                fill = c("#B0B0F7", NA)
-              )
-            )) +
-            theme(legend.title = element_text(color = "#D036B3", face = "bold"))+ 
-            theme(
-              text = element_text(size = 16),  # Increase the text size to 16
-              axis.title = element_text(size = 18))
-          # theme(legend.position = "bottom")
-          
-          
-          
-          #geom_line(data=cbind(a,step_pred),
-          #                    aes(y = step_pred,x=timestamp), size = 1, color = "blue")
-          
-          #384A8A
-          ############################################################################################################################
-          
-          
-          
+            observe({
+              
+              a <- lapply(seq_along(request_encounter), function(i) {  
+                
+                response <- WCL_API2_request(request_encounter[i])$data$reportData$report$events$data
+                
+                if(length(response) != 0) {
+                  
+                  # response <- rename(response,fightID = id)
+                  
+                } else {
+                  # response <- rename(response,fightID = id)
+                }
+                return(response)
+              })
+              rm(request_encounter)
+              
+              output$plot_DP <- renderPlot({     
+               
+                a <- do.call(bind_rows, a)
+                
+                a_temp <- a %>% 
+                  filter(type=="combatantinfo")
+                
+                if(nrow(a_temp)>0){
+                  a_temp <- a_temp %>%
+                    select(type,sourceID,auras)
+                  a_temp <-   do.call(bind_rows, a_temp$auras) %>%
+                    filter(ability==57399)} else { 
+                      
+                      a_temp <- data.frame(source=as.integer(0))
+                    }
+                
+                
+                a <-  a %>% 
+                  filter(sourceID==targetID & 
+                           !is.na(spellPower) & 
+                           lead(timestamp) != timestamp & 
+                           targetID %in% IDsDP) %>%
+                  select(timestamp,#type,
+                         #sourceID,
+                         targetID,
+                         # abilityGameID,
+                         spellPower) 
+                
+                
+                
+                desired_names <- a %>%
+                  filter(spellPower == 46| spellPower ==326| spellPower == 211| spellPower == 190) %>%
+                  distinct(targetID) %>%
+                  pull(targetID)
+                
+                desired_names <- unique(union(desired_names, a_temp$source))
+                rm(a_temp)
+                
+                a <- a %>%
+                  mutate(spellPower = ifelse(targetID %in% desired_names, spellPower - 46, spellPower),
+                         targetID = paste0("ID",targetID),
+                         timestamp = timestamp/1000) %>%
+                  pivot_wider(names_from = targetID,
+                              values_from = spellPower) %>% 
+                  arrange(timestamp) %>%
+                  fill(starts_with("ID"),.direction="up") %>%
+                  # replace(is.na(.), 0) %>% 
+                  mutate(timestamp=round(timestamp))%>%
+                  group_by(timestamp)  %>%
+                  summarise(across(starts_with("ID"), mean, na.rm = TRUE)) %>%
+                  rowwise() %>%
+                  mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE)) %>%
+                  ungroup() %>%
+                  pivot_longer(cols=starts_with("ID"))
+                
+                b <- casts %>% 
+                  filter(abilityGameID==48090 & type != "refreshbuff")%>% 
+                  mutate(timestamp = (timestamp/1000)-min(a$timestamp,na.rm = T))
+                
+                
+                # Add missing pairs
+                b <- addPairs(b)
+                
+                
+                b<- b %>% 
+                  select(timestamp,type) %>% 
+                  mutate(timestamp = as.integer(timestamp)) %>%
+                  group_by(type) %>%
+                  mutate(row = row_number()) %>%
+                  pivot_wider(names_from=type, values_from=timestamp)%>% 
+                  ungroup()# %>%
+                # mutate(applybuff = applybuff/1000-min(a$timestamp),
+                #    removebuff = removebuff/1000-min(a$timestamp))
+                
+                # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
+                #step_pred <- predict(step_fit, a)
+                
+                ggplot() +
+                  geom_point(data=a %>% 
+                               mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
+                             aes(timestamp, value),alpha = 0.1, color="black", fill=NA, size = 2) +
+                  geom_smooth(data=a %>% 
+                                mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
+                              aes(timestamp, value,linetype="Trend line"), span = 0.05,
+                              size=1.25,
+                              color = "#3586C4", fill = "#A7D4F6") +
+                  geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
+                                          ymin = -Inf, ymax = Inf,colour="DP Uptime"),
+                            fill = "#B0B0F7",lwd=0, alpha = 0.25)  + 
+                  theme_bw()  + 
+                  
+                  labs(x = "Timestamp (Seconds)",
+                       y = "Spellpower",
+                  ) + 
+                  geom_step(data=a %>% 
+                              mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
+                            aes(timestamp, max_value,colour="Estimated\nSpellpower"), size=1.05) +
+                  
+                  scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
+                                     expand = expansion(mult = c(0, 0))) +
+                  
+                  scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,50))+
+                  geom_hline(aes(linetype="Mean"),yintercept = mean(a$max_value,na.rm=T),
+                             color = "#D036B3", alpha = 1,
+                             size=1.25, linetype =2) +
+                  
+                  scale_colour_manual("", 
+                                      breaks = c("DP Uptime", "Estimated\nSpellpower"),
+                                      values = c("DP Uptime"="#ba87ee", "Estimated\nSpellpower"="#6464E1")) +
+                  scale_linetype_manual("", 
+                                        breaks = c("Trend line"),
+                                        values = c("Trend line"=3)) +
+                  
+                  guides(color = guide_legend(
+                    title = paste0("Mean SP:",round(mean(a$max_value,na.rm=T))),
+                    override.aes = list(
+                      linetype = c(0, 1),
+                      size = c(1, 1),
+                      color = c("#B0B0F7", "#8788EE"),
+                      fill = c("#B0B0F7", NA)
+                    )
+                  )) +
+                  theme(legend.title = element_text(color = "#D036B3", face = "bold"))+ 
+                  theme(
+                    text = element_text(size = 16),  # Increase the text size to 16
+                    axis.title = element_text(size = 18))
+                # theme(legend.position = "bottom")
+                
+                
+                
+                #geom_line(data=cbind(a,step_pred),
+                #                    aes(y = step_pred,x=timestamp), size = 1, color = "blue")
+                
+                #384A8A
+                ############################################################################################################################
+                
+                
+                
+              }) 
+        
           })
- })
           
           
           

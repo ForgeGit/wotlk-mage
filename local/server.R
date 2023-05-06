@@ -1888,6 +1888,7 @@ server <- function(input, output,session) {
                                        as.numeric(fight_temp),
                                        IDsDP,
                                        IDsDP)
+          
           a <- lapply(seq_along(request_encounter), function(i) {  
             
             response <- WCL_API2_request(request_encounter[i])$data$reportData$report$events$data
@@ -1979,13 +1980,17 @@ server <- function(input, output,session) {
            
           ggplot() +
             geom_point(data=a %>% 
-                         mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
+                         mutate(timestamp = timestamp-min(a$timestamp,na.rm = T))%>%
+                         na.omit(.), 
                        aes(timestamp, value),alpha = 0.1, color="black", fill=NA, size = 2) +
             geom_smooth(data=a %>% 
-                          mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
+                          mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)) %>%
+                          na.omit(.), 
                         aes(timestamp, value,linetype="Trend line"), span = 0.05,
                         size=1.25,
-                        color = "#3586C4", fill = "#A7D4F6") +
+                        color = "#3586C4", fill = "#A7D4F6",
+                        method = 'gam',
+                        formula = y ~ s(x, bs = "cs")) +
             geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
                                     ymin = -Inf, ymax = Inf,colour="DP Uptime"),
                       fill = "#B0B0F7",lwd=0, alpha = 0.25)  + 
@@ -1999,10 +2004,13 @@ server <- function(input, output,session) {
                       aes(timestamp, max_value,colour="Estimated\nSpellpower"), size=1.05) +
             
             scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
+                               breaks = seq(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T),25),
                                expand = expansion(mult = c(0, 0))) +
             
-            scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,50))+
-            geom_hline(aes(linetype="Mean"),yintercept = mean(a$max_value,na.rm=T),
+            scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,50),
+                               expand = expansion(mult = c(0.05, 0.05))) +
+            
+            geom_hline(aes(linetype="Mean",yintercept = mean(a$max_value,na.rm=T)),
                        color = "#D036B3", alpha = 1,
                        size=1.25, linetype =2) +
             
@@ -2036,9 +2044,10 @@ server <- function(input, output,session) {
           #384A8A
           ############################################################################################################################
           
-          
+        #  rm(a,b)
           
           })
+            
  })
           
           

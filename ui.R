@@ -128,8 +128,9 @@ ui <- fluidPage(
       selectInput("character", "Select Character:", choices = NULL),
       # input for fight selection
       selectInput("fight", "Select Fight:", choices = NULL),
-      
-      actionButton("submit_char_id","ESTIMATE Metrics"),
+      actionButton("submit_char_id","ESTIMATE Fight Metrics"),
+    #  br(),
+     # actionButton("submit_demonic","Demonic Pact Metrics"),
       br(),
       actionButton("debug_id","debug table"),
       br(),

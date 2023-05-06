@@ -25,19 +25,19 @@ color_gradient_red <- function(dt, column_name, gradient_colors = c("#BE5350", "
 }
 
 # Function to add missing pairs
-addPairs <- function(data) {
+addPairs <- function(data,data_a) {
   # Check if the first row starts with B
   if (data[1, "type"] == "removebuff") {
     # Add an A at the beginning
     data <- bind_rows(data.frame(type = "applybuff",
-                                 timestamp = min(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)), data)
+                                 timestamp = min(data_a$timestamp,na.rm = T)-min(data_a$timestamp,na.rm = T)), data)
   }
   
   # Check if the last row ends with A
   if (data[nrow(data), "type"] == "applybuff") {
     # Add a B at the end
     data <- bind_rows(data, data.frame(type = "removebuff",
-                                       timestamp = max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)))
+                                       timestamp = max(data_a$timestamp,na.rm = T)-min(data_a$timestamp,na.rm = T)))
   }
   
   return(data)
@@ -524,6 +524,7 @@ server <- function(input, output,session) {
   }
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
+  output$DP_info <- renderUI({ HTML(paste(paste0("")))})
   
   #### CHANGELOG####
   output$Changelog <- renderUI({
@@ -1874,7 +1875,7 @@ server <- function(input, output,session) {
                 select(id)
               # mutate(name = paste0(name, " (ID:",id,")"))
               
-          
+           
           # 165 = flametongue at 144 + (7*3)
           # 280 wrath
           # 46 food buff
@@ -1902,7 +1903,7 @@ server <- function(input, output,session) {
           })
           rm(request_encounter)
           a <- do.call(bind_rows, a)
-          
+           
           a_temp <- a %>% 
             filter(type=="combatantinfo")
           
@@ -1915,7 +1916,7 @@ server <- function(input, output,session) {
               a_temp <- data.frame(source=as.integer(0))
               }
           
-          
+           
           a <-  a %>% 
             filter(sourceID==targetID & 
                      !is.na(spellPower) & 
@@ -1936,7 +1937,7 @@ server <- function(input, output,session) {
           
           desired_names <- unique(union(desired_names, a_temp$source))
           rm(a_temp)
-          
+           
           a <- a %>%
             mutate(spellPower = ifelse(targetID %in% desired_names, spellPower - 46, spellPower),
                    targetID = paste0("ID",targetID),
@@ -1953,16 +1954,16 @@ server <- function(input, output,session) {
             mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE)) %>%
             ungroup() %>%
             pivot_longer(cols=starts_with("ID"))
-          
+           
           b <- casts %>% 
-            filter(abilityGameID==48090 & type != "refreshbuff")%>% 
+            filter(as.integer(abilityGameID)==48090 & type != "refreshbuff")%>% 
             mutate(timestamp = (timestamp/1000)-min(a$timestamp,na.rm = T))
           
 
           # Add missing pairs
-          b <- addPairs(b)
+          b <- addPairs(b,a)
           
-          
+           
           b<- b %>% 
             select(timestamp,type) %>% 
             mutate(timestamp = as.integer(timestamp)) %>%
@@ -1975,7 +1976,7 @@ server <- function(input, output,session) {
           
          # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
           #step_pred <- predict(step_fit, a)
-          
+           
           ggplot() +
             geom_point(data=a %>% 
                          mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 

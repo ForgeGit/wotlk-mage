@@ -524,6 +524,7 @@ server <- function(input, output,session) {
   }
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
+  output$DP_info <- renderUI({ HTML(paste(paste0("")))})
   
   #### CHANGELOG####
   output$Changelog <- renderUI({
@@ -1848,7 +1849,7 @@ server <- function(input, output,session) {
             str_DP_A <- paste0("- The following is the estimation of the spellpower gained from the spells: ")
             str_DP_A2 <-paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Demonic Pact (shaded)")
             str_DP_A3 <-paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Totem of Wrath or Flametongue")
-
+            
             str_DP_A_B <- paste0("- If you get an error it is possible DP wasn't registered properly in the fight; you can send me a DM to try and double-check. This is currently being tested.")
             ## Final format
             HTML(paste(
@@ -1863,32 +1864,33 @@ server <- function(input, output,session) {
             
           })
           
-            
-            DP_actors <- actors() %>% 
-              filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
-              select(id)
-            # mutate(name = paste0(name, " (ID:",id,")"))
-            
-            ##############################################################
-            #####DEMONIC PACT ############
-            
-            
-            # 165 = flametongue at 144 + (7*3)
-            # 280 wrath
-            # 46 food buff
-            # 326 = food + wrath
-            ############################################
-            ###### Request encounters available for each log
-            IDsDP <- unique(DP_actors$id)
-            
-            request_encounter <- sprintf(request_cast_2, as.character(extract_log_id(as.character(input$log_id))),
-                                         as.numeric(fight_temp),
-                                         IDsDP,
-                                         IDsDP)
+          
+          DP_actors <- actors() %>% 
+            filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
+            select(id)
+          # mutate(name = paste0(name, " (ID:",id,")"))
+          
+          ##############################################################
+          #####DEMONIC PACT ############
+          
+          
+          # 165 = flametongue at 144 + (7*3)
+          # 280 wrath
+          # 46 food buff
+          # 326 = food + wrath
+          ############################################
+          ###### Request encounters available for each log
+          IDsDP <- unique(DP_actors$id)
+          
+          
+          
+          
+          observe({
 
-            
-            
-            observe({
+              request_encounter <- sprintf(request_cast_2, as.character(extract_log_id(as.character(input$log_id))),
+                                           as.numeric(fight_temp),
+                                           IDsDP,
+                                           IDsDP)
               
               a <- lapply(seq_along(request_encounter), function(i) {  
                 
@@ -1903,84 +1905,83 @@ server <- function(input, output,session) {
                 }
                 return(response)
               })
-              rm(request_encounter)
+              #rm(request_encounter)
+              a <- do.call(bind_rows, a)
+              
+              a_temp <- a %>% 
+                filter(type=="combatantinfo")
+              
+              if(nrow(a_temp)>0){
+                a_temp <- a_temp %>%
+                  select(type,sourceID,auras)
+                a_temp <-   do.call(bind_rows, a_temp$auras) %>%
+                  filter(ability==57399)} else { 
+                    
+                    a_temp <- data.frame(source=as.integer(0))
+                  }
+              
+              
+              a <-  a %>% 
+                filter(sourceID==targetID & 
+                         !is.na(spellPower) & 
+                         lead(timestamp) != timestamp & 
+                         targetID %in% IDsDP) %>%
+                select(timestamp,#type,
+                       #sourceID,
+                       targetID,
+                       # abilityGameID,
+                       spellPower) 
+              
+              
+              
+              desired_names <- a %>%
+                filter(spellPower == 46| spellPower ==326| spellPower == 211| spellPower == 190) %>%
+                distinct(targetID) %>%
+                pull(targetID)
+              
+              desired_names <- unique(union(desired_names, a_temp$source))
+              rm(a_temp)
+              
+              a <- a %>%
+                mutate(spellPower = ifelse(targetID %in% desired_names, spellPower - 46, spellPower),
+                       targetID = paste0("ID",targetID),
+                       timestamp = timestamp/1000) %>%
+                pivot_wider(names_from = targetID,
+                            values_from = spellPower) %>% 
+                arrange(timestamp) %>%
+                fill(starts_with("ID"),.direction="up") %>%
+                # replace(is.na(.), 0) %>% 
+                mutate(timestamp=round(timestamp))%>%
+                group_by(timestamp)  %>%
+                summarise(across(starts_with("ID"), mean, na.rm = TRUE)) %>%
+                rowwise() %>%
+                mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE)) %>%
+                ungroup() %>%
+                pivot_longer(cols=starts_with("ID"))
+              
+              b <- casts %>% 
+                filter(abilityGameID==48090 & type != "refreshbuff")%>% 
+                mutate(timestamp = (timestamp/1000)-min(a$timestamp,na.rm = T))
+              
+              
+              # Add missing pairs
+              b <- addPairs(b)
+              
+              
+              b<- b %>% 
+                select(timestamp,type) %>% 
+                mutate(timestamp = as.integer(timestamp)) %>%
+                group_by(type) %>%
+                mutate(row = row_number()) %>%
+                pivot_wider(names_from=type, values_from=timestamp)%>% 
+                ungroup()# %>%
+              # mutate(applybuff = applybuff/1000-min(a$timestamp),
+              #    removebuff = removebuff/1000-min(a$timestamp))
+              
+              # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
+              #step_pred <- predict(step_fit, a)
               
               output$plot_DP <- renderPlot({     
-               
-                a <- do.call(bind_rows, a)
-                
-                a_temp <- a %>% 
-                  filter(type=="combatantinfo")
-                
-                if(nrow(a_temp)>0){
-                  a_temp <- a_temp %>%
-                    select(type,sourceID,auras)
-                  a_temp <-   do.call(bind_rows, a_temp$auras) %>%
-                    filter(ability==57399)} else { 
-                      
-                      a_temp <- data.frame(source=as.integer(0))
-                    }
-                
-                
-                a <-  a %>% 
-                  filter(sourceID==targetID & 
-                           !is.na(spellPower) & 
-                           lead(timestamp) != timestamp & 
-                           targetID %in% IDsDP) %>%
-                  select(timestamp,#type,
-                         #sourceID,
-                         targetID,
-                         # abilityGameID,
-                         spellPower) 
-                
-                
-                
-                desired_names <- a %>%
-                  filter(spellPower == 46| spellPower ==326| spellPower == 211| spellPower == 190) %>%
-                  distinct(targetID) %>%
-                  pull(targetID)
-                
-                desired_names <- unique(union(desired_names, a_temp$source))
-                rm(a_temp)
-                
-                a <- a %>%
-                  mutate(spellPower = ifelse(targetID %in% desired_names, spellPower - 46, spellPower),
-                         targetID = paste0("ID",targetID),
-                         timestamp = timestamp/1000) %>%
-                  pivot_wider(names_from = targetID,
-                              values_from = spellPower) %>% 
-                  arrange(timestamp) %>%
-                  fill(starts_with("ID"),.direction="up") %>%
-                  # replace(is.na(.), 0) %>% 
-                  mutate(timestamp=round(timestamp))%>%
-                  group_by(timestamp)  %>%
-                  summarise(across(starts_with("ID"), mean, na.rm = TRUE)) %>%
-                  rowwise() %>%
-                  mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE)) %>%
-                  ungroup() %>%
-                  pivot_longer(cols=starts_with("ID"))
-                
-                b <- casts %>% 
-                  filter(abilityGameID==48090 & type != "refreshbuff")%>% 
-                  mutate(timestamp = (timestamp/1000)-min(a$timestamp,na.rm = T))
-                
-                
-                # Add missing pairs
-                b <- addPairs(b)
-                
-                
-                b<- b %>% 
-                  select(timestamp,type) %>% 
-                  mutate(timestamp = as.integer(timestamp)) %>%
-                  group_by(type) %>%
-                  mutate(row = row_number()) %>%
-                  pivot_wider(names_from=type, values_from=timestamp)%>% 
-                  ungroup()# %>%
-                # mutate(applybuff = applybuff/1000-min(a$timestamp),
-                #    removebuff = removebuff/1000-min(a$timestamp))
-                
-                # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
-                #step_pred <- predict(step_fit, a)
                 
                 ggplot() +
                   geom_point(data=a %>% 
@@ -2044,20 +2045,21 @@ server <- function(input, output,session) {
                 
                 
               }) 
+              
+            })
+            
         
-          })
+            
+            
+          }
+          #writesheet("user1", 700)  
           
-          
-          
-        }
-        #writesheet("user1", 700)  
-        
-        #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)
-        #   encoded_content <- base64encode(file_content)
-        #   
-        #   # Decode the contents of the secret archive from base64
-        #   decoded_secret <- base64(encoded_content)
-        #   
+          #   file_content <- readBin(".secrets.rar", "raw", file.info(".secrets.rar")$size)
+          #   encoded_content <- base64encode(file_content)
+          #   
+          #   # Decode the contents of the secret archive from base64
+          #   decoded_secret <- base64(encoded_content)
+          #   
         #   # Write the decoded contents of the secret archive to a temporary file
         #   tmpfile <- tempfile(fileext=".rar")
         #   writeBin(charToRaw(decoded_secret),tmpfile,"output-file.ext")

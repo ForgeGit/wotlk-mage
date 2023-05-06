@@ -11,6 +11,8 @@ library(googledrive)
 library(shinycssloaders)
 library(stringr)
 library(purrr)
+library(ggplot2)
+library(Cairo)
 #library(gargle)
 
 #source("./helpers.R")

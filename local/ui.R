@@ -197,6 +197,14 @@ ui <- fluidPage(
                              column(width = 10, uiOutput("FAQ"))
                            )
                   ),
+                  tabPanel("Demonic Pact (BETA)",
+                           fluidRow(
+                             column(width = 10, uiOutput("DP_info"))
+                             ),
+                           fluidRow(
+                             column(width = 8, withSpinner(plotOutput("plot_DP"),color="red"))
+                           )
+                  ),
                   tabPanel("Scoreboard",
                            fluidRow(      br(),
                                           

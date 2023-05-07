@@ -54,7 +54,9 @@ boss_list <- c(757, #Alga
                745, #Ignis
                751, #Hodir
                753,
-               101107:101120
+               101107:101120,
+               #629,
+                633, 645
 ) 
 
 npc_exclusions <- c("Hodir's Fury",
@@ -795,6 +797,9 @@ server <- function(input, output,session) {
                                            encounterID_2 == '101118'  ~ 'Patchwerk',
                                            encounterID_2 == '101119'  ~ 'Sapphiron',
                                            encounterID_2 == '101120'  ~ 'Thaddius',
+                                          # encounterID_2 == '629'  ~ 'Icehowl',
+                                           encounterID_2 == '633'  ~ 'Jaraxxus',
+                                           encounterID_2 == '645'  ~ "Anub'arak",
                                            
                                            TRUE ~ encounterID_2),
                  
@@ -959,7 +964,7 @@ server <- function(input, output,session) {
     #                             )$data$reportData$report$events$data
     
     pre_combatant_trigger <- any(grepl("combatantinfo", casts$type))
-    ignite_pressence <- any(grepl(12654, casts$abilityGameID))
+    ignite_pressence <- any(grepl(12654, casts$abilityGameID) | grepl(413843, casts$abilityGameID))
     
     if(pre_combatant_trigger==F & doctor_pressence()=="FALSE"){
       

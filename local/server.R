@@ -1024,6 +1024,8 @@ server <- function(input, output,session) {
     fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
     
     fightStartTime_1000 <- fightStartTime/1000
+    fightEndTime <-  fights() %>% filter(id == fight_temp) %>% select(endTime) %>% pull(.)
+    fightEndTime_1000 <- fightEndTime/1000
     
     #### Fire mages ####
     
@@ -1917,6 +1919,9 @@ server <- function(input, output,session) {
           fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
           
           fightStartTime_1000 <- fightStartTime/1000
+          fightEndTime <-  fights() %>% filter(id == fight_temp) %>% select(endTime) %>% pull(.)
+          fightEndTime_1000 <- fightEndTime/1000
+          
           ##############################################################
           #####DEMONIC PACT ############
           
@@ -2017,7 +2022,7 @@ server <- function(input, output,session) {
           
           if(nrow(b) == 0){
             b <- data.frame(timestamp = c(0,
-                                          max(a$timestamp,na.rm = T)-(fightStartTime_1000)),
+                                           fightEndTime_1000-(fightStartTime_1000)),
                             type=c("applybuff","removebuff"))  
           }
           
@@ -2038,11 +2043,12 @@ server <- function(input, output,session) {
           # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
           #step_pred <- predict(step_fit, a)
           
-          a2 <- a %>% group_by(timestamp) %>% summarise(med_data = mean(med_value,na.rm=T),
-                                                        max_data = mean(max_value,na.rm=T) )
+          a2 <- a %>% group_by(timestamp) %>% 
+            summarise(med_data = mean(med_value,na.rm=T),
+                      max_data = mean(max_value,na.rm=T) )
           
           
-
+          
           observe({
 
             output$plot_DP <- renderPlot(res=96,{     
@@ -2078,8 +2084,8 @@ server <- function(input, output,session) {
                         mutate(timestamp = timestamp-fightStartTime_1000), 
                       aes(timestamp, med_value,colour="Spellpower"), size=1.05) +
             
-            scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-fightStartTime_1000),
-                               breaks = seq(0,max(a$timestamp,na.rm = T)-fightStartTime_1000,30),
+            scale_x_continuous(limits=c(0, fightEndTime_1000-fightStartTime_1000),
+                               breaks = seq(0, fightEndTime_1000-fightStartTime_1000,30),
                                expand = expansion(mult = c(0, 0))) +
             
             scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,100),

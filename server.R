@@ -532,6 +532,8 @@ server <- function(input, output,session) {
   output$Changelog <- renderUI({
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
+               paste0("- 07/05/2023: Support for Jaraxxus and Anub'rak (TOGC PTR)"),
+               paste0("- 06/05/2023: 'Demonic Pact' measures and graphic - Currently under testing"),
                paste0("- 05/05/2023: Added 'GCD Cap' detection"),
                paste0("- 04/05/2023: App performance improvements"),
                paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Spell queue window metrics added."),

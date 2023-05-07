@@ -2052,7 +2052,7 @@ server <- function(input, output,session) {
             labs(title=paste0("Raid-wide spellpower buff on ",fight_name),
                  x = "Timestamp (Seconds)",
                  y = "Spellpower",
-                # caption = "DP = Demonic Pact   |   SP = Spellpower"
+                caption = "App: https://wotlk-mage.herokuapp.com/",
                  
               #  subtitle= paste0("<span style='background-color:#B0B0F7;'>Demonic Pact uptime for ",actor_name,"</span>")
                   subtitle = paste0("Estimated spellpower and Demonic Pact uptime for: ",actor_name)
@@ -2065,7 +2065,8 @@ server <- function(input, output,session) {
                                breaks = seq(0, fightEndTime_1000-fightStartTime_1000,30),
                                expand = expansion(mult = c(0, 0))) +
             
-            scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,100),
+            scale_y_continuous(limits=c(0, max(a$max_value,na.rm = T)+100),
+                               breaks = seq(0,max(a$max_value,na.rm = T)+100,100),
                                expand = expansion(mult = c(0.05, 0.05))) +
             
             geom_hline(aes(linetype="Mean",yintercept = mean(a2$med_data,na.rm=T)),
@@ -2099,7 +2100,7 @@ server <- function(input, output,session) {
             theme(
               text = element_text(size = 14),  # Increase the text size to 16
               axis.title = element_text(size = 16),
-              plot.caption = element_text(hjust = 0),
+              plot.caption = element_text(hjust = 0,size=10),
               # legend.position = c(0.6, 0.6),
               #legend.position = "top",
               #   legend.box="horizontal",

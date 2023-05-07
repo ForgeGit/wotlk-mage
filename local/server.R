@@ -1866,7 +1866,7 @@ server <- function(input, output,session) {
           
           observe({
             
-            output$plot_DP <- renderPlot({     
+            output$plot_DP <- renderPlot(res=96,{     
               ##############################################################
               #####DEMONIC PACT ############
               
@@ -1997,16 +1997,21 @@ server <- function(input, output,session) {
                         method = 'gam',
                         formula = y ~ s(x, bs = "cs")) +
             geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
-                                    ymin = -Inf, ymax = Inf,colour="DP Uptime"),
+                                    ymin = -Inf, ymax = Inf,colour="DP uptime"),
                       fill = "#B0B0F7",lwd=0, alpha = 0.25)  + 
             theme_bw()  + 
             
-            labs(x = "Timestamp (Seconds)",
+            labs(title=paste0("Raid-wide spellpower buff on ",fight_name),
+                 x = "Timestamp (Seconds)",
                  y = "Spellpower",
+                 caption = "DP = Demonic Pact   |   SP = Spellpower"
+                 
+              #  subtitle= paste0("<span style='background-color:#B0B0F7;'>Demonic Pact uptime for ",actor_name,"</span>")
+                 # subtitle = paste0("Demonic Pact uptime for: ",actor_name)
             ) + 
             geom_step(data=a %>% 
                         mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
-                      aes(timestamp, max_value,colour="Estimated\nSpellpower"), size=1.05) +
+                      aes(timestamp, max_value,colour="Estimated SP"), size=1.05) +
             
             scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
                                breaks = seq(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T),25),
@@ -2020,25 +2025,39 @@ server <- function(input, output,session) {
                        size=1.25, linetype =2) +
             
             scale_colour_manual("", 
-                                breaks = c("DP Uptime", "Estimated\nSpellpower"),
-                                values = c("DP Uptime"="#ba87ee", "Estimated\nSpellpower"="#6464E1")) +
+                                breaks = c("DP uptime", "Estimated SP"),
+                                values = c("DP uptime"="#ba87ee", "Estimated SP"="#6464E1")) +
             scale_linetype_manual("", 
                                   breaks = c("Trend line"),
                                   values = c("Trend line"=3)) +
             
             guides(color = guide_legend(
-              title = paste0("Mean SP:",round(mean(a$max_value,na.rm=T))),
+              title = paste0("Average SP:\n",round(mean(a$max_value,na.rm=T))),
+            #  direction = "vertical",
+              title.position = "top",
+            #  nrow=1,
               override.aes = list(
                 linetype = c(0, 1),
                 size = c(1, 1),
                 color = c("#B0B0F7", "#8788EE"),
                 fill = c("#B0B0F7", NA)
               )
-            )) +
-            theme(legend.title = element_text(color = "#D036B3", face = "bold"))+ 
+            )) +           
             theme(
-              text = element_text(size = 16),  # Increase the text size to 16
-              axis.title = element_text(size = 18))
+              text = element_text(size = 14),  # Increase the text size to 16
+              axis.title = element_text(size = 16),
+              plot.caption = element_text(hjust = 0),
+              # legend.position = c(0.6, 0.6),
+              #legend.position = "top",
+              #   legend.box="horizontal",
+              # legend.background = element_rect(fill = alpha('white', 0.5)),
+              legend.title = element_text(color = "#D036B3", face = "bold")  ,
+              plot.title = element_text(face = "bold",
+                                            #size = scale_factor * 16,
+                                            hjust = 0))
+            #  plot.subtitle = element_textbox_simple(fill = "#B0B0F7"))
+          
+          # element_markdown(face = "italic"))
           # theme(legend.position = "bottom")
           
           

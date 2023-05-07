@@ -25,19 +25,19 @@ color_gradient_red <- function(dt, column_name, gradient_colors = c("#BE5350", "
 }
 
 # Function to add missing pairs
-addPairs <- function(data,data_a) {
+addPairs <- function(data,data_a,time_1000) {
   # Check if the first row starts with B
   if (data[1, "type"] == "removebuff") {
     # Add an A at the beginning
     data <- bind_rows(data.frame(type = "applybuff",
-                                 timestamp = min(data_a$timestamp,na.rm = T)-min(data_a$timestamp,na.rm = T)), data)
+                                 timestamp = 0), data)
   }
   
   # Check if the last row ends with A
   if (data[nrow(data), "type"] == "applybuff") {
     # Add a B at the end
     data <- bind_rows(data, data.frame(type = "removebuff",
-                                       timestamp = max(data_a$timestamp,na.rm = T)-min(data_a$timestamp,na.rm = T)))
+                                       timestamp = max(data_a$timestamp,na.rm = T)-time_1000))
   }
   
   return(data)
@@ -526,7 +526,7 @@ server <- function(input, output,session) {
   }
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
-  output$DP_info <- renderUI({ HTML(paste(paste0("")))})
+  #output$DP_info <- renderUI({ HTML(paste(paste0("")))})
   
   #### CHANGELOG####
   output$Changelog <- renderUI({
@@ -907,6 +907,8 @@ server <- function(input, output,session) {
   
   observeEvent(input$submit_char_id, {
     
+  output$plot_DP <- renderPlot({ plot.new()  })
+     
     output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
     output$summary_ignite_2 <- renderUI({ HTML(paste(paste0("")))})
     output$cast_delays_1 <- renderUI({ HTML(paste(paste0("")))})
@@ -917,6 +919,7 @@ server <- function(input, output,session) {
     output$summary_header <- renderUI({ HTML(paste(paste0("")))})
     output$alert_header <- renderUI({ HTML(paste(paste0("")))})
     
+
     ##### + Parse fight ID ####
     
     fight_name <- input$fight
@@ -1016,6 +1019,12 @@ server <- function(input, output,session) {
       
     }
     
+    
+   # ### FIght Metadata ####
+    fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
+    
+    fightStartTime_1000 <- fightStartTime/1000
+    
     #### Fire mages ####
     
     # Fire mages only from here onward
@@ -1051,7 +1060,7 @@ server <- function(input, output,session) {
           paste(collapse = ",") %>%
           str_to_sentence() 
         
-        
+         
         hitSpell <- combatinfo %>% 
           pull(hitSpell) 
         
@@ -1059,7 +1068,8 @@ server <- function(input, output,session) {
           pull(auras) %>% 
           `[[`(1) %>% 
           filter(ability == 28878) %>% 
-          mutate(Draenei_buff = ifelse(nrow(.) >= 1, paste0("<sup>[-26]</sup>", "<img src='https://wow.zamimg.com/images/wow/icons/large/inv_helmet_21.jpg' height='15' width='15'/>"), "")) %>% 
+          mutate(Draenei_buff = ifelse(nrow(.) >= 1, 
+                                       paste0("<sup>[-26]</sup>", "<img src='https://wow.zamimg.com/images/wow/icons/large/inv_helmet_21.jpg' height='15' width='15'/>"), "")) %>% 
           slice(1) %>%
           pull(Draenei_buff) %>% 
           toString()
@@ -1103,7 +1113,7 @@ server <- function(input, output,session) {
                                     "<img src='https://wow.zamimg.com/images/wow/icons/large/ability_mage_frostfirebolt.jpg' height='25' width='25'/>", 
                                     "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"))
       } else {
-        
+         
         sub_spec <- spec   
         spec_image <- "<img src='https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg' height='25' width='25'/>"
       }
@@ -1183,7 +1193,7 @@ server <- function(input, output,session) {
           
           filter(abilityGameID ==55360 & 
                    type == "refreshdebuff")
-        
+         
         ### Cast gaps extraction
         
         # casts <- WCL_API2_request(sprintf(request_cast, 
@@ -1214,6 +1224,13 @@ server <- function(input, output,session) {
           filter(type=="begincast" & delay <500)
   
         median_cast_SQW <- median(casts_SQW$delay,na.rm = T)
+        if(nrow(casts_SQW)!=0){
+        outlier_SQW_text <- nrow(casts_SQW[ casts_SQW$delay != 0, ])
+        } else{
+          outlier_SQW_text <- "NONE"
+          
+          
+        }
         
         #### GCD Cap
         casts_GCD <- casts %>% 
@@ -1260,12 +1277,13 @@ server <- function(input, output,session) {
           filter(abilityGameID==42891 & 
                    type=="cast") 
         
+         
         
         rm(main_pyro)
         ##### + FFB MAGE SECTION #####
          
         if(sub_spec=="FFB"){
-          
+           
           ######## FFB cancelled/interrupted  #######
           
           frostfirebolt_interrupt <- casts %>% 
@@ -1291,6 +1309,7 @@ server <- function(input, output,session) {
           
           alert_hit_2 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-128,
                                 "</font>","") 
+           
           
           ### Main Spell
           str_mainspell <- paste0("- Frostfire Bolt cancelled: ",nrow(frostfirebolt_interrupt))
@@ -1305,20 +1324,28 @@ server <- function(input, output,session) {
             
           }
           
+           
           
-          if(as.integer(median_cast_SQW)<15){
+
+          if( is.na(median_cast_SQW)){
             
-            str_casts_SQW <- paste0("- Frostfire Bolt  Queue Time (Median): ",median_cast_SQW," ms")
-            str_cast_sqw_outlier <- paste0("- Frostfire Bolt  Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
+            str_casts_SQW <- paste0("- Frostfire Bolt Queue Time (Median): NONE")
+            str_cast_sqw_outlier <- paste0("- Frostfire Bolt Queue Time (Outliers): ", outlier_SQW_text)
+            
+          } else  if(median_cast_SQW<15){
+            
+            str_casts_SQW <- paste0("- Frostfire Bolt Queue Time (Median): ",median_cast_SQW," ms")
+            str_cast_sqw_outlier <- paste0("- Frostfire Bolt Queue Time (Outliers): ", outlier_SQW_text)
             
           }else{
             
-            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Median):",median_cast_SQW,"ms <sup>Check the FAQ!</sup></font>")
-            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt  Queue Time (Outliers):", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"</font>" )
+            str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt Queue Time (Median): ",median_cast_SQW," ms <sup>Check the FAQ!</sup></font>")
+            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Frostfire Bolt Queue Time (Outliers): ", outlier_SQW_text,"</font>" )
             
           }
           
           
+           
           
           
         }
@@ -1339,12 +1366,14 @@ server <- function(input, output,session) {
                                              type=="begincast",
                                            "Interrupted","OK")) %>% 
             filter(flag_interrupt=="Interrupted")
+           
           
           ### TTW Hit Cap
           Draenei_buff<- ifelse(exists("Draenei_buff") | !is.na(Draenei_buff),Draenei_buff,"")
           hitCap <- paste0("367",Draenei_buff)
           hitCap <- ifelse(hitSpell>=10,hitCap,"")
           realhitCap <- ifelse(nchar(Draenei_buff)>3, 341, 367)
+           
           
           alert_hit_1 <- ifelse(hitSpell>realhitCap+90 | hitSpell<realhitCap-50,
                                 "<font color=\"#BE5350\">","")
@@ -1352,6 +1381,7 @@ server <- function(input, output,session) {
                                 "</font>","")
           ### Main Spell
           str_mainspell <- paste0("- Fireball cancelled: ",nrow(fireball_interrupt)) 
+           
           
           
           if(casts_GCD>0){
@@ -1363,20 +1393,27 @@ server <- function(input, output,session) {
             
             
           }
+           
           
-          if(median_cast_SQW<15){
+          if( is.na(median_cast_SQW)){
+            
+            str_casts_SQW <- paste0("- Fireball Queue Time (Median): NONE")
+            str_cast_sqw_outlier <- paste0("- Fireball Queue Time (Outliers): ", outlier_SQW_text)
+            
+          } else  if(median_cast_SQW<15){
             
             str_casts_SQW <- paste0("- Fireball Queue Time (Median): ",median_cast_SQW," ms")
-            str_cast_sqw_outlier <- paste0("- Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]) )
+            str_cast_sqw_outlier <- paste0("- Fireball Queue Time (Outliers): ", outlier_SQW_text)
             
           }else{
             
             str_casts_SQW <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Median): ",median_cast_SQW," ms <sup>Check the FAQ!</sup></font>")
-            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Outliers): ", nrow(casts_SQW[ casts_SQW$delay != 0, ]),"</font>" )
+            str_cast_sqw_outlier <- paste0("<font color=\"#BE5350\"> - Fireball Queue Time (Outliers): ", outlier_SQW_text,"</font>" )
             
           }
            
         }
+         
         
         ##### + NO SPEC#####
         
@@ -1386,7 +1423,7 @@ server <- function(input, output,session) {
           str_mainspell <- "NO DATA"
           # hitSpell <- "NO DATA"
         }
-        
+         
         ## Hot streaks and Pyros Hotstreaks
         
         insta_pyros_db <- casts %>% 
@@ -1512,7 +1549,7 @@ server <- function(input, output,session) {
           
         }
         
-        
+         
         
         ####  Ignite Metrics left  ####  
         
@@ -1864,7 +1901,7 @@ server <- function(input, output,session) {
                         "&entry.1929065299=",
                         median_cast_SQW ,
                         "&entry.1143266=",
-                        nrow(casts_SQW[ casts_SQW$delay != 0, ]),
+                        outlier_SQW_text,
                         "&entry.1655361760=",
                         casts_GCD
           )
@@ -1874,19 +1911,22 @@ server <- function(input, output,session) {
           
           res <- POST(url = url)
           
-
-          observe({
-            
-            output$plot_DP <- renderPlot(res=96,{     
-              ##############################################################
-              #####DEMONIC PACT ############
-              
-              DP_actors <- actors() %>% 
-                filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
-                select(id)
-              # mutate(name = paste0(name, " (ID:",id,")"))
-              
-           
+          
+          
+          # ### FIght Metadata ####
+          fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
+          
+          fightStartTime_1000 <- fightStartTime/1000
+          ##############################################################
+          #####DEMONIC PACT ############
+          
+          DP_actors <- actors() %>% 
+            filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
+            select(id) %>%
+            sample_frac()# Temporary until a sensitivity analysis is made? (4)
+          # mutate(name = paste0(name, " (ID:",id,")"))
+          
+          
           # 165 = flametongue at 144 + (7*3)
           # 280 wrath
           # 46 food buff
@@ -1899,6 +1939,9 @@ server <- function(input, output,session) {
                                        as.numeric(fight_temp),
                                        IDsDP,
                                        IDsDP)
+          
+          request_encounter<-request_encounter[1:5][!is.na(request_encounter[1:5])]  # Temporary until a sensitivity analysis is made? (4)
+          
           
           a <- lapply(seq_along(request_encounter), function(i) {  
             
@@ -1915,20 +1958,20 @@ server <- function(input, output,session) {
           })
           rm(request_encounter)
           a <- do.call(bind_rows, a)
-           
+          
           a_temp <- a %>% 
             filter(type=="combatantinfo")
           
           if(nrow(a_temp)>0){
             a_temp <- a_temp %>%
-            select(type,sourceID,auras)
-          a_temp <-   do.call(bind_rows, a_temp$auras) %>%
-            filter(ability==57399)} else { 
-              
-              a_temp <- data.frame(source=as.integer(0))
+              select(type,sourceID,auras)
+            a_temp <-   do.call(bind_rows, a_temp$auras) %>%
+              filter(ability==57399)} else { 
+                
+                a_temp <- data.frame(source=as.integer(0))
               }
           
-           
+          
           a <-  a %>% 
             filter(sourceID==targetID & 
                      !is.na(spellPower) & 
@@ -1949,7 +1992,7 @@ server <- function(input, output,session) {
           
           desired_names <- unique(union(desired_names, a_temp$source))
           rm(a_temp)
-           
+          
           a <- a %>%
             mutate(spellPower = ifelse(targetID %in% desired_names, spellPower - 46, spellPower),
                    targetID = paste0("ID",targetID),
@@ -1970,16 +2013,16 @@ server <- function(input, output,session) {
           
           b <- casts %>% 
             filter(as.integer(abilityGameID)==48090 & type != "refreshbuff")%>% 
-            mutate(timestamp = (timestamp/1000)-min(a$timestamp,na.rm = T))
+            mutate(timestamp =  (timestamp-fightStartTime)/1000)
           
           if(nrow(b) == 0){
             b <- data.frame(timestamp = c(0,
-                                          max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
+                                          max(a$timestamp,na.rm = T)-(fightStartTime_1000)),
                             type=c("applybuff","removebuff"))  
-            }
+          }
           
           # Add missing pairs
-          b <- addPairs(b,a)
+          b <- addPairs(b,a,fightStartTime_1000)
           
           
           b<- b %>% 
@@ -1994,18 +2037,24 @@ server <- function(input, output,session) {
           
           # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
           #step_pred <- predict(step_fit, a)
-           
+          
           a2 <- a %>% group_by(timestamp) %>% summarise(med_data = mean(med_value,na.rm=T),
                                                         max_data = mean(max_value,na.rm=T) )
           
           
+
+          observe({
+
+            output$plot_DP <- renderPlot(res=96,{     
+   
+          
           ggplot() +
             geom_point(data=a %>% 
-                         mutate(timestamp = timestamp-min(a$timestamp,na.rm = T))%>%
+                         mutate(timestamp = timestamp-fightStartTime_1000)%>%
                          na.omit(.), 
                        aes(timestamp, value),alpha = 0.1, color="black", fill=NA, size = 2) +
             geom_smooth(data=a %>% 
-                          mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)) %>%
+                          mutate(timestamp = timestamp-fightStartTime_1000) %>%
                           na.omit(.), 
                         aes(timestamp, value,linetype="Trend"), span = 0.05,
                         size=1.25,
@@ -2026,11 +2075,11 @@ server <- function(input, output,session) {
                   subtitle = paste0("Estimated spellpower and Demonic Pact uptime for: ",actor_name)
             ) + 
             geom_step(data=a %>% 
-                        mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
+                        mutate(timestamp = timestamp-fightStartTime_1000), 
                       aes(timestamp, med_value,colour="Spellpower"), size=1.05) +
             
-            scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
-                               breaks = seq(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T),30),
+            scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-fightStartTime_1000),
+                               breaks = seq(0,max(a$timestamp,na.rm = T)-fightStartTime_1000,30),
                                expand = expansion(mult = c(0, 0))) +
             
             scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,100),

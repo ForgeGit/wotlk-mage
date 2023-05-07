@@ -100,6 +100,7 @@ WCL_API2_request <- function(request) {
 ######### Errors ##########
 
 error1 <-"It looks like the log you just linked does not exist, has no mages, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing"
+error1_A <- "This log won't have Mage metrics."
 error2 <-"It looks like the log you just linked does not have valid fights for analysis, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing."
 error3 <- "It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"
 error_diag <-function(x,y) {
@@ -117,7 +118,20 @@ error_diag <-function(x,y) {
   
 }
 
-
+warning_diag <-function(x) {
+  
+  x <- modalDialog(
+    title = paste0("Warning"),
+    x,
+    easyClose = TRUE,
+    footer = tagList(
+      modalButton("OK")
+    )
+  )
+  
+  return(x)
+  
+}
 
 ######### Requests ##########
 
@@ -715,23 +729,31 @@ server <- function(input, output,session) {
   ##### + Actors list ######
   
   actors <-eventReactive(input$submit_log_id, {
-    
-    ###### Actor Download ######
-    actors<-WCL_API2_request(
-      sprintf(
-        request_actors, # Request 
-        as.character(extract_log_id(as.character(input$log_id))) # log ID
-      )
-    )$data$reportData$report$masterData$actors
-    
-    if(!is.null(actors)){
+    if(nchar(input$log_id)>5){
+      ###### Actor Download ######
+      actors<-WCL_API2_request(
+        sprintf(
+          request_actors, # Request 
+          as.character(extract_log_id(as.character(input$log_id))) # log ID
+        )
+      )$data$reportData$report$masterData$actors
       
-      actors %>% 
-        filter(subType %in% c("NPC","Boss","Mage","Unknown","Rogue","Warrior","DeathKnight","Hunter")) # Exclude unnecesary classes/pets
+      return(actors)
       
-    }else{
+      if(!is.null(actors)){
+        
+        actors %>% 
+          filter(subType %in% c("NPC","Boss","Mage","Unknown","Rogue","Warrior","DeathKnight","Hunter")) # Exclude unnecesary classes/pets
+        
+      }else{
+        
+        "NO DATA"
+        
+      }
       
-      "NO DATA"
+    } else{
+      
+      showModal(error_diag(error1,1))
       
     }
     
@@ -854,7 +876,7 @@ server <- function(input, output,session) {
         updateSelectInput(session, "character", choices = actors()$name)
         
       } else {
-        showModal(error_diag(error1,1))
+        showModal(warning_diag(error1_A))
         updateSelectInput(session, "character", choices = "NO MAGES")
       }
       
@@ -952,7 +974,10 @@ server <- function(input, output,session) {
       actor_temp <- actor_temp$id[1]
       
     }else {
+      suppressWarnings({
       actor_temp <- parse_number(actor_name)
+      })
+      
     }
     
     #### + All casts extraction ####
@@ -1028,6 +1053,7 @@ server <- function(input, output,session) {
     fightEndTime_1000 <- fightEndTime/1000
     
     #### Fire mages ####
+    #### MAIN NODE FOR CONTINUATION ####
     
     # Fire mages only from here onward
     # Have to change for frost ignite spec (Pending Hodir log)
@@ -1861,59 +1887,11 @@ server <- function(input, output,session) {
                               sep = '<br/>'))) }
         })
         
-        ###### Leaderboard ####
+        
+        ###### Send metrics and DP plotting ####
+        
         if(fight_name != "Dr. Boom"){
-          #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
-          #   water <- URLencode(as.character(water))
-          #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
-          #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
-          #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
-          #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
-          #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
-          url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
-                        as.character(extract_log_id(as.character(input$log_id))),
-                        "&entry.96171645=",
-                        sapply(strsplit(actor_name, " "), `[`, 1),
-                        "&entry.1179038397=",
-                        round(ignite_table$Munch_NET_2)*-1 ,
-                        "&entry.1734686763=",
-                        round(n_insta_pyros/n_total_hot_streak, digits = 2),
-                        "&entry.1228481340=",
-                        boss_name_singular,
-                        "&entry.1629132558=",
-                        median(casts_fb_pyro$delay,na.rm=T),
-                        "&entry.1806850293=",
-                        mean(casts_fb_pyro$delay,na.rm=T),
-                        "&entry.1724070192=",
-                        lb_clipped,
-                        "&entry.1899085980=",
-                        max(ignite_table_debug$igniteSUB_resist),
-                        "&entry.303429649=",
-                        ignite_total_dealt,
-                        "&entry.1911698108=",
-                        sub_spec,
-                        "&entry.1948745936=",
-                        as.numeric(nrow(Marked_Data)),
-                        "&entry.1124325413=",
-                        max_sp,
-                        "&entry.2031855061=",
-                        nchar(enchants),
-                        "&entry.1370589148=",
-                        ignite_lost_sadge,
-                        "&entry.1929065299=",
-                        median_cast_SQW ,
-                        "&entry.1143266=",
-                        outlier_SQW_text,
-                        "&entry.1655361760=",
-                        casts_GCD
-          )
-          
-          
-          #nrow(Marked_Data)
-          
-          res <- POST(url = url)
-          
-          
+
           
           # ### FIght Metadata ####
           fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
@@ -2021,8 +1999,7 @@ server <- function(input, output,session) {
             mutate(timestamp =  (timestamp-fightStartTime)/1000)
           
           if(nrow(b) == 0){
-            b <- data.frame(timestamp = c(0,
-                                           fightEndTime_1000-(fightStartTime_1000)),
+            b <- data.frame(timestamp = c(0,0),
                             type=c("applybuff","removebuff"))  
           }
           
@@ -2150,7 +2127,59 @@ server <- function(input, output,session) {
             
  })
           
+          ###### Leaderboard ####
           
+          #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
+          #   water <- URLencode(as.character(water))
+          #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+          #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+          #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+          #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+          #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+          url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
+                        as.character(extract_log_id(as.character(input$log_id))),
+                        "&entry.96171645=",
+                        sapply(strsplit(actor_name, " "), `[`, 1),
+                        "&entry.1179038397=",
+                        round(ignite_table$Munch_NET_2)*-1 ,
+                        "&entry.1734686763=",
+                        round(n_insta_pyros/n_total_hot_streak, digits = 2),
+                        "&entry.1228481340=",
+                        boss_name_singular,
+                        "&entry.1629132558=",
+                        median(casts_fb_pyro$delay,na.rm=T),
+                        "&entry.1806850293=",
+                        mean(casts_fb_pyro$delay,na.rm=T),
+                        "&entry.1724070192=",
+                        lb_clipped,
+                        "&entry.1899085980=",
+                        max(ignite_table_debug$igniteSUB_resist),
+                        "&entry.303429649=",
+                        ignite_total_dealt,
+                        "&entry.1911698108=",
+                        sub_spec,
+                        "&entry.1948745936=",
+                        as.numeric(nrow(Marked_Data)),
+                        "&entry.1124325413=",
+                        max_sp,
+                        "&entry.2031855061=",
+                        nchar(enchants),
+                        "&entry.1370589148=",
+                        ignite_lost_sadge,
+                        "&entry.1929065299=",
+                        median_cast_SQW ,
+                        "&entry.1143266=",
+                        outlier_SQW_text,
+                        "&entry.1655361760=",
+                        casts_GCD,
+                        "&entry.241007073=",
+                        mean(a2$med_data,na.rm=T)
+          )
+          
+          
+          #nrow(Marked_Data)
+          
+          res <- POST(url = url)   
           
         }
         #writesheet("user1", 700)  
@@ -2234,10 +2263,291 @@ server <- function(input, output,session) {
       ))
       
       
-    } else { 
+    } else if(is.numeric(fight_temp) & nrow(actors()%>% 
+                                            filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter")>1)){ 
+      
+      
+      
+      # ### FIght Metadata ####
+      fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
+      
+      fightStartTime_1000 <- fightStartTime/1000
+      fightEndTime <-  fights() %>% filter(id == fight_temp) %>% select(endTime) %>% pull(.)
+      fightEndTime_1000 <- fightEndTime/1000
+      
+      targetID_code <- actors() %>%
+        filter(
+          grepl(
+            paste0("\\b(", 
+                   paste(
+                     sub("(\\w+).*", "\\1", 
+                         fight_name),
+                     collapse = "|"), ")\\b"),
+            name,
+            ignore.case = TRUE)
+        ) %>% 
+        filter(subType!="Unknown" & 
+                 !(name %in% ## Names are searched based on "Single Names" - Using "Algalon" will keep "Algalon the Observer".
+                     npc_exclusions)) %>% ## Sometimes, "Hodir" and "Hodir's Wrath" exist. We want the wrath away.
+        select(id,name) 
+      boss_name_singular <- sapply(strsplit(targetID_code$name[1], " "), `[`, 1) 
+      ##############################################################
+      #####DEMONIC PACT ############
+      
+      DP_actors <- actors() %>% 
+        filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
+        select(id) %>%
+        sample_frac()# Temporary until a sensitivity analysis is made? (4)
+      # mutate(name = paste0(name, " (ID:",id,")"))
+      
+      
+      # 165 = flametongue at 144 + (7*3)
+      # 280 wrath
+      # 46 food buff
+      # 326 = food + wrath
+      ############################################
+      ###### Request encounters available for each log
+      IDsDP <- unique(DP_actors$id)
+      
+      request_encounter <- sprintf(request_cast_2, as.character(extract_log_id(as.character(input$log_id))),
+                                   as.numeric(fight_temp),
+                                   IDsDP,
+                                   IDsDP)
+      
+      request_encounter<-request_encounter[1:5][!is.na(request_encounter[1:5])]  # Temporary until a sensitivity analysis is made? (4)
+      
+      
+      a <- lapply(seq_along(request_encounter), function(i) {  
+        
+        response <- WCL_API2_request(request_encounter[i])$data$reportData$report$events$data
+        
+        if(length(response) != 0) {
+          
+          # response <- rename(response,fightID = id)
+          
+        } else {
+          # response <- rename(response,fightID = id)
+        }
+        return(response)
+      })
+      rm(request_encounter)
+      a <- do.call(bind_rows, a)
+      
+      a_temp <- a %>% 
+        filter(type=="combatantinfo")
+      
+      if(nrow(a_temp)>0){
+        a_temp <- a_temp %>%
+          select(type,sourceID,auras)
+        a_temp <-   do.call(bind_rows, a_temp$auras) %>%
+          filter(ability==57399)} else { 
+            
+            a_temp <- data.frame(source=as.integer(0))
+          }
+      
+      
+      a <-  a %>% 
+        filter(sourceID==targetID & 
+                 !is.na(spellPower) & 
+                 lead(timestamp) != timestamp & 
+                 targetID %in% IDsDP) %>%
+        select(timestamp,#type,
+               #sourceID,
+               targetID,
+               # abilityGameID,
+               spellPower) 
+      
+      
+      
+      desired_names <- a %>%
+        filter(spellPower == 46| spellPower ==326| spellPower == 211| spellPower == 190) %>%
+        distinct(targetID) %>%
+        pull(targetID)
+      
+      desired_names <- unique(union(desired_names, a_temp$source))
+      rm(a_temp)
+      
+      a <- a %>%
+        mutate(spellPower = ifelse(targetID %in% desired_names, spellPower - 46, spellPower),
+               targetID = paste0("ID",targetID),
+               timestamp = timestamp/1000) %>%
+        pivot_wider(names_from = targetID,
+                    values_from = spellPower) %>% 
+        arrange(timestamp) %>%
+        fill(starts_with("ID"),.direction="up") %>%
+        # replace(is.na(.), 0) %>% 
+        mutate(timestamp=round(timestamp))%>%
+        group_by(timestamp)  %>%
+        summarise(across(starts_with("ID"), mean, na.rm = TRUE)) %>%
+        rowwise() %>%
+        mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE),
+               med_value = median(c_across(starts_with("ID")), na.rm = TRUE)) %>%
+        ungroup() %>%
+        pivot_longer(cols=starts_with("ID"))
+      
+
+        b <- data.frame(timestamp = c(0,
+                                      0),
+                        type=c("applybuff","removebuff"))  
+
+      
+      b<- b %>% 
+        select(timestamp,type) %>% 
+        mutate(timestamp = as.integer(timestamp)) %>%
+        group_by(type) %>%
+        mutate(row = row_number()) %>%
+        pivot_wider(names_from=type, values_from=timestamp)%>% 
+        ungroup()# %>%
+      # mutate(applybuff = applybuff/1000-min(a$timestamp),
+      #    removebuff = removebuff/1000-min(a$timestamp))
+      
+      # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
+      #step_pred <- predict(step_fit, a)
+      
+      a2 <- a %>% group_by(timestamp) %>% 
+        summarise(med_data = mean(med_value,na.rm=T),
+                  max_data = mean(max_value,na.rm=T) )
+      
+      
+      
+      observe({
+        
+        output$plot_DP <- renderPlot(res=96,{     
+          
+          
+          ggplot() +
+            geom_point(data=a %>% 
+                         mutate(timestamp = timestamp-fightStartTime_1000)%>%
+                         na.omit(.), 
+                       aes(timestamp, value),alpha = 0.1, color="black", fill=NA, size = 2) +
+            geom_smooth(data=a %>% 
+                          mutate(timestamp = timestamp-fightStartTime_1000) %>%
+                          na.omit(.), 
+                        aes(timestamp, value,linetype="Trend"), span = 0.05,
+                        size=1.25,
+                        color = "#3586C4", fill = "#A7D4F6",
+                        method = 'gam',
+                        formula = y ~ s(x, bs = "cs")) +
+          #  geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
+           #                         ymin = -Inf, ymax = Inf,colour="Demonic Pact"),
+            #          fill = "#B0B0F7",lwd=0, alpha = 0.25)  + 
+            theme_bw()  + 
+            
+            labs(title=paste0("Raid-wide spellpower buff on ",fight_name),
+                 x = "Timestamp (Seconds)",
+                 y = "Spellpower",
+                 # caption = "DP = Demonic Pact   |   SP = Spellpower"
+                 
+                 #  subtitle= paste0("<span style='background-color:#B0B0F7;'>Demonic Pact uptime for ",actor_name,"</span>")
+                 subtitle = paste0("Estimated spellpower and Demonic Pact uptime for: RAID")
+            ) + 
+            geom_step(data=a %>% 
+                        mutate(timestamp = timestamp-fightStartTime_1000), 
+                      aes(timestamp, med_value,colour="Spellpower"), size=1.05) +
+            
+            scale_x_continuous(limits=c(0, fightEndTime_1000-fightStartTime_1000),
+                               breaks = seq(0, fightEndTime_1000-fightStartTime_1000,30),
+                               expand = expansion(mult = c(0, 0))) +
+            
+            scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,100),
+                               expand = expansion(mult = c(0.05, 0.05))) +
+            
+            geom_hline(aes(linetype="Mean",yintercept = mean(a2$med_data,na.rm=T)),
+                       color = "#D036B3", alpha = 1,
+                       size=1.25, linetype =2) +
+            
+            scale_colour_manual("", 
+                                breaks = c(#"Demonic Pact", 
+                                           "Spellpower"),
+                                values = c(#"Demonic Pact"="#ba87ee",
+                                           "Spellpower"="#6464E1")) +
+            scale_linetype_manual("", 
+                                  
+                                  breaks = c("Trend"),
+                                  values = c("Trend"=3)) +
+            
+            guides(color = guide_legend(
+              title = paste0("Average SP:",round(mean(a2$med_data,na.rm=T))),
+              #  direction = "vertical",
+              title.position = "top",
+              #  nrow=1,
+              override.aes = list(
+                linetype = c(#0,
+                             1),
+                size = c(#1, 
+                         1),
+                color = c(#"#B0B0F7", 
+                                   "#8788EE"),
+                fill = c(#"#B0B0F7", 
+                                  NA)
+              ),
+              order=1
+            ),
+            linetype = guide_legend(
+              title = "",
+              order=2)
+            ) +           
+            theme(
+              text = element_text(size = 14),  # Increase the text size to 16
+              axis.title = element_text(size = 16),
+              plot.caption = element_text(hjust = 0),
+              # legend.position = c(0.6, 0.6),
+              #legend.position = "top",
+              #   legend.box="horizontal",
+              # legend.background = element_rect(fill = alpha('white', 0.5)),
+              legend.title = element_text(color = "#D036B3", face = "bold",size=11)  ,
+              plot.title = element_text(face = "bold",
+                                        #size = scale_factor * 16,
+                                        hjust = 0))
+          #  plot.subtitle = element_textbox_simple(fill = "#B0B0F7"))
+          
+          # element_markdown(face = "italic"))
+          # theme(legend.position = "bottom")
+          
+          
+          
+          #geom_line(data=cbind(a,step_pred),
+          #                    aes(y = step_pred,x=timestamp), size = 1, color = "blue")
+          
+          #384A8A
+          ############################################################################################################################
+          
+          #  rm(a,b)
+          
+        })
+      
+      })     
+      ###### Leaderboard ####
+      
+      #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
+      #   water <- URLencode(as.character(water))
+      #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+      #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+      #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+      #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+      #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+      url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
+                    as.character(extract_log_id(as.character(input$log_id))),
+                    "&entry.96171645=",
+                    sapply(strsplit(actor_name, " "), `[`, 1),
+                    "&entry.1228481340=",
+                    boss_name_singular,
+                    "&entry.241007073=",
+                    mean(a2$med_data,na.rm=T)
+      )
+      
+      
+      #nrow(Marked_Data)
+      
+      res <- POST(url = url) 
+      
+      
+    } else {  
+      
+      
       showModal(modalDialog(
         title = "Error 5",
-        paste0("It looks like that character has no data for that fight, or it is possible no talent data is available in the log for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing - Analysis without talents will be available in a couple days."),
+        paste0("It looks like that character has no data for that fight, or it is possible no talent data is available in the log for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing."),
         easyClose = TRUE,
         footer = tagList(
           modalButton("OK")

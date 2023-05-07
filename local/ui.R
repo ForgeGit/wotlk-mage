@@ -121,7 +121,7 @@ ui <- fluidPage(
       tags$span(HTML("<span style='color:#D78613;'>If you happen to encounter any issues with an encounter or log, feel free to reach out to me on Discord.</span>")),
       br(),
       # input for log ID
-      textInput("log_id", "Enter Log ID:"),
+      textInput("log_id", "Enter Log ID:",placeholder="e.g. gLOFenDCV103kNa2 or https://classic.warcraftlogs.com/reports/yJRZjtPBbxd9LC74"),
       
       actionButton("submit_log_id","READ log",icon("refresh")),
       # input for character selection

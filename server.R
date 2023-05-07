@@ -608,6 +608,29 @@ server <- function(input, output,session) {
     
   })
   
+  ########## DEMONIC PACT TEXT ##################33
+
+  output$DP_info<- renderUI({
+  
+  str_DP_A <- paste0("- The following is the estimation of the spellpower gained from: ")
+  str_DP_A2 <-paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Demonic Pact (Demonology Warlock)")
+  str_DP_A3 <-paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Totem of Wrath or Flametongue (Shaman)")
+  
+  str_DP_A_B <- paste0("- If you get an error it is possible DP wasn't registered properly in the fight; you can send me a DM to try and double-check. This is currently being tested.")
+  ## Final format
+  HTML(paste(
+    "<br/",
+    paste0("<h4><b> Demonic Pact/Totem of Wrath/Flametongue raid-wide spellpower) estimation</b></h4>"),
+    str_DP_A,
+    str_DP_A2,
+    str_DP_A3,
+    "<br/",
+    str_DP_A_B,
+    sep = '<br/>'))
+  
+})
+
+  
   #### Leaderboard ####
   
   gs4_deauth()
@@ -1844,26 +1867,7 @@ server <- function(input, output,session) {
           
           res <- POST(url = url)
           
-          output$DP_info<- renderUI({
-            
-            str_DP_A <- paste0("- The following is the estimation of the spellpower gained from the spells: ")
-            str_DP_A2 <-paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Demonic Pact (shaded)")
-            str_DP_A3 <-paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Totem of Wrath or Flametongue")
 
-            str_DP_A_B <- paste0("- If you get an error it is possible DP wasn't registered properly in the fight; you can send me a DM to try and double-check. This is currently being tested.")
-            ## Final format
-            HTML(paste(
-              "<br/",
-              paste0("<h4><b> Demonic Pact (ToW/Flametongue) uptime and values</b></h4>"),
-              str_DP_A,
-              str_DP_A2,
-              str_DP_A3,
-              "<br/",
-              str_DP_A_B,
-              sep = '<br/>'))
-            
-          })
-          
           observe({
             
             output$plot_DP <- renderPlot(res=96,{     
@@ -1952,7 +1956,8 @@ server <- function(input, output,session) {
             group_by(timestamp)  %>%
             summarise(across(starts_with("ID"), mean, na.rm = TRUE)) %>%
             rowwise() %>%
-            mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE)) %>%
+            mutate(max_value = max(c_across(starts_with("ID")), na.rm = TRUE),
+                   med_value = median(c_across(starts_with("ID")), na.rm = TRUE)) %>%
             ungroup() %>%
             pivot_longer(cols=starts_with("ID"))
           
@@ -1983,6 +1988,10 @@ server <- function(input, output,session) {
           # step_fit <- lm(value ~ cut(timestamp, 14), data = a)
           #step_pred <- predict(step_fit, a)
            
+          a2 <- a %>% group_by(timestamp) %>% summarise(med_data = mean(med_value,na.rm=T),
+                                                        max_data = mean(max_value,na.rm=T) )
+          
+          
           ggplot() +
             geom_point(data=a %>% 
                          mutate(timestamp = timestamp-min(a$timestamp,na.rm = T))%>%
@@ -1991,48 +2000,48 @@ server <- function(input, output,session) {
             geom_smooth(data=a %>% 
                           mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)) %>%
                           na.omit(.), 
-                        aes(timestamp, value,linetype="Trend line"), span = 0.05,
+                        aes(timestamp, value,linetype="Trend"), span = 0.05,
                         size=1.25,
                         color = "#3586C4", fill = "#A7D4F6",
                         method = 'gam',
                         formula = y ~ s(x, bs = "cs")) +
             geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
-                                    ymin = -Inf, ymax = Inf,colour="DP uptime"),
+                                    ymin = -Inf, ymax = Inf,colour="Demonic Pact"),
                       fill = "#B0B0F7",lwd=0, alpha = 0.25)  + 
             theme_bw()  + 
             
             labs(title=paste0("Raid-wide spellpower buff on ",fight_name),
                  x = "Timestamp (Seconds)",
                  y = "Spellpower",
-                 caption = "DP = Demonic Pact   |   SP = Spellpower"
+                # caption = "DP = Demonic Pact   |   SP = Spellpower"
                  
               #  subtitle= paste0("<span style='background-color:#B0B0F7;'>Demonic Pact uptime for ",actor_name,"</span>")
-                 # subtitle = paste0("Demonic Pact uptime for: ",actor_name)
+                  subtitle = paste0("Estimated spellpower and Demonic Pact uptime for: ",actor_name)
             ) + 
             geom_step(data=a %>% 
                         mutate(timestamp = timestamp-min(a$timestamp,na.rm = T)), 
-                      aes(timestamp, max_value,colour="Estimated SP"), size=1.05) +
+                      aes(timestamp, med_value,colour="Spellpower"), size=1.05) +
             
             scale_x_continuous(limits=c(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T)),
-                               breaks = seq(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T),25),
+                               breaks = seq(0,max(a$timestamp,na.rm = T)-min(a$timestamp,na.rm = T),30),
                                expand = expansion(mult = c(0, 0))) +
             
-            scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,50),
+            scale_y_continuous(breaks = seq(0,max(a$max_value,na.rm = T)+100,100),
                                expand = expansion(mult = c(0.05, 0.05))) +
             
-            geom_hline(aes(linetype="Mean",yintercept = mean(a$max_value,na.rm=T)),
+            geom_hline(aes(linetype="Mean",yintercept = mean(a2$med_data,na.rm=T)),
                        color = "#D036B3", alpha = 1,
                        size=1.25, linetype =2) +
             
             scale_colour_manual("", 
-                                breaks = c("DP uptime", "Estimated SP"),
-                                values = c("DP uptime"="#ba87ee", "Estimated SP"="#6464E1")) +
+                                breaks = c("Demonic Pact", "Spellpower"),
+                                values = c("Demonic Pact"="#ba87ee", "Spellpower"="#6464E1")) +
             scale_linetype_manual("", 
-                                  breaks = c("Trend line"),
-                                  values = c("Trend line"=3)) +
+                                  breaks = c("Trend"),
+                                  values = c("Trend"=3)) +
             
             guides(color = guide_legend(
-              title = paste0("Average SP:\n",round(mean(a$max_value,na.rm=T))),
+              title = paste0("Average SP:",round(mean(a2$med_data,na.rm=T))),
             #  direction = "vertical",
               title.position = "top",
             #  nrow=1,
@@ -2041,8 +2050,13 @@ server <- function(input, output,session) {
                 size = c(1, 1),
                 color = c("#B0B0F7", "#8788EE"),
                 fill = c("#B0B0F7", NA)
-              )
-            )) +           
+              ),
+            order=1
+            ),
+            linetype = guide_legend(
+              title = "",
+              order=2)
+            ) +           
             theme(
               text = element_text(size = 14),  # Increase the text size to 16
               axis.title = element_text(size = 16),
@@ -2051,7 +2065,7 @@ server <- function(input, output,session) {
               #legend.position = "top",
               #   legend.box="horizontal",
               # legend.background = element_rect(fill = alpha('white', 0.5)),
-              legend.title = element_text(color = "#D036B3", face = "bold")  ,
+              legend.title = element_text(color = "#D036B3", face = "bold",size=11)  ,
               plot.title = element_text(face = "bold",
                                             #size = scale_factor * 16,
                                             hjust = 0))

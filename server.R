@@ -503,7 +503,7 @@ ignite_summary <- function(x) {
 
 extract_log_id <- function(log_input) {
   # Regular expression pattern to match the log ID
-  pattern <- "(?<=\\/|\\#|^)([A-Za-z0-9]+)(?=\\/?\\#|\\?|\\/$|$)"
+  pattern <- "((?<=/)|^)(a:)?([\\w]{16})"#"(?<=\\/|\\#|^)([A-Za-z0-9]+)(?=\\/?\\#|\\?|\\/$|$)"
   
   # Extract the ID using the pattern
   match <- regexpr(pattern, log_input, perl = TRUE)

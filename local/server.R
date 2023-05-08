@@ -53,10 +53,10 @@ boss_list <- c(757, #Alga
                749, #Kologarn
                745, #Ignis
                751, #Hodir
-               753,
-               101107:101120,
+               753, #
+               101107:101120, # All of naxx except 4H
                #629,
-                633, 645
+                633, 645 #
 ) 
 
 npc_exclusions <- c("Hodir's Fury",
@@ -501,7 +501,8 @@ ignite_summary <- function(x) {
   
 }
 
-#########################################################################################
+############################# Extract log ID REGEX ################################################
+
 
 extract_log_id <- function(log_input) {
   # Regular expression pattern to match the log ID
@@ -523,7 +524,11 @@ extract_log_id <- function(log_input) {
 ############################### SERVER ############################### 
 
 server <- function(input, output,session) {
+  
   options(shiny.usecairo=TRUE)
+  
+  #### KEEP ME AWAKE #####
+  
   startTime <- Sys.time()
   
   autoInvalidate <- reactiveTimer(45000)
@@ -540,6 +545,8 @@ server <- function(input, output,session) {
   stopObserver <- function() {
     stop("Observer stopped after 5 minutes.")
   }
+  
+  ### Load screen 
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   #output$DP_info <- renderUI({ HTML(paste(paste0("")))})
@@ -653,7 +660,7 @@ server <- function(input, output,session) {
 })
 
   
-  #### Leaderboard ####
+  #### LEADERBOARD (LOAD) ####
   
   gs4_deauth()
   option_table_list <- list(paging=F, 

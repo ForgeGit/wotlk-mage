@@ -53,10 +53,10 @@ boss_list <- c(757, #Alga
                749, #Kologarn
                745, #Ignis
                751, #Hodir
-               753,
-               101107:101120,
+               753, #
+               101107:101120, # All of naxx except 4H
                #629,
-                633, 645
+                633, 645 #
 ) 
 
 npc_exclusions <- c("Hodir's Fury",
@@ -501,7 +501,8 @@ ignite_summary <- function(x) {
   
 }
 
-#########################################################################################
+############################# Extract log ID REGEX ################################################
+
 
 extract_log_id <- function(log_input) {
   # Regular expression pattern to match the log ID
@@ -523,7 +524,11 @@ extract_log_id <- function(log_input) {
 ############################### SERVER ############################### 
 
 server <- function(input, output,session) {
+  
   options(shiny.usecairo=TRUE)
+  
+  #### KEEP ME AWAKE #####
+  
   startTime <- Sys.time()
   
   autoInvalidate <- reactiveTimer(45000)
@@ -540,6 +545,8 @@ server <- function(input, output,session) {
   stopObserver <- function() {
     stop("Observer stopped after 5 minutes.")
   }
+  
+  ### Load screen 
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   #output$DP_info <- renderUI({ HTML(paste(paste0("")))})
@@ -653,7 +660,7 @@ server <- function(input, output,session) {
 })
 
   
-  #### Leaderboard ####
+  #### LEADERBOARD (LOAD) ####
   
   gs4_deauth()
   option_table_list <- list(paging=F, 
@@ -665,15 +672,17 @@ server <- function(input, output,session) {
 
 ########################################################  
   
-  lead_table <- reactive({
-   read_sheet(Sys.getenv("LEADERBOARD"),sheet = "Sheet2")
-  })
+  lead_table <- read_sheet(Sys.getenv("LEADERBOARD"),sheet = "Sheet2") 
+  
+#  reactive({
+   
+#  })
   
   
-  observe({
+  #observe({
     
     output$table_A_UI <- renderDT(
-      lead_table() %>%  as.data.frame() %>%
+      lead_table %>%  as.data.frame() %>%
         filter(df=="Spellpower") %>% 
         select(-c(df)) %>%
         rename(`Max. Spellpower` = measure) %>% 
@@ -682,7 +691,7 @@ server <- function(input, output,session) {
     )
     
     output$table_B_UI <- renderDT(
-      lead_table() %>% 
+      lead_table %>% 
         filter(df=="Hotstreak") %>% 
         select(-c(df)) %>%
         rename(`Hot Streak/Pyro` = measure) %>% 
@@ -691,7 +700,7 @@ server <- function(input, output,session) {
     )
     
     output$table_C_UI <- renderDT(
-      lead_table() %>% 
+      lead_table %>% 
         filter(df=="Munch") %>% 
         select(-c(df)) %>%
         rename(`Biggest Munch` = measure) %>% 
@@ -700,7 +709,7 @@ server <- function(input, output,session) {
     )    
     
     output$table_D_UI <- renderDT(
-      lead_table() %>% 
+      lead_table %>% 
         filter(df=="Vomit") %>% 
         select(-c(df)) %>%
         rename(`Biggest Vomit` = measure) %>% 
@@ -709,14 +718,14 @@ server <- function(input, output,session) {
     )
     
     output$table_E_UI <- renderDT(
-      lead_table() %>% 
+      lead_table %>% 
         filter(df=="Ignite tick") %>% 
         select(-c(df)) %>%
         rename(`Highest ignite tick` = measure) %>% 
         datatable(options=option_table_list, escape=F)  %>% 
         color_gradient_green("Highest ignite tick")
     )
-  })
+#  })
   
   
   #### Style settings #####
@@ -730,10 +739,16 @@ server <- function(input, output,session) {
   
   #### STEP 1: Submit log ID (Prep) ####
   
+    
+
+
+    
   ##### + Actors list ######
   
   actors <-eventReactive(input$submit_log_id, {
-    if(nchar(input$log_id)>5){
+    
+    if(nchar(input$log_id)>5){ # Valid log?
+      
       ###### Actor Download ######
       actors<-WCL_API2_request(
         sprintf(
@@ -744,20 +759,21 @@ server <- function(input, output,session) {
       
       return(actors)
       
-      if(!is.null(actors)){
+      if(!is.null(actors)){ # Valid log? part 2
         
         actors %>% 
-          filter(subType %in% c("NPC","Boss","Mage","Unknown","Rogue","Warrior","DeathKnight","Hunter")) # Exclude unnecesary classes/pets
+          filter(subType %in% c("NPC","Boss","Mage","Unknown",
+                                "Rogue","Warrior","DeathKnight","Hunter")) # Exclude unnecesary classes/pets
         
-      }else{
+      } else {
         
-        "NO DATA"
+        "NO DATA" # Not a valid log - No actors
         
       }
       
     } else{
       
-      showModal(error_diag(error1,1))
+      showModal(error_diag(error1,1)) # Not a valid log - No data at all or bad syntax
       
     }
     
@@ -945,23 +961,28 @@ server <- function(input, output,session) {
     output$summary_header <- renderUI({ HTML(paste(paste0("")))})
     output$alert_header <- renderUI({ HTML(paste(paste0("")))})
     
-
+    log_id <- as.character(extract_log_id(as.character(input$log_id)))
+    
     ##### + Parse fight ID ####
     
     fight_name <- input$fight
     
     if(doctor_pressence()=="TRUE"){
       
-      fight_temp<- fights() %>% 
+      fight_temp <- fights() %>% 
         filter(startTime==as.numeric(fight_name)) %>% 
         select(id)
       
       fight_temp <- fight_temp$id[1]
       
       if(c("Dr. Boom") %in% actors()$name  == T){
-        fight_name="Dr. Boom"} else if(c("Deathstalker Vincent") %in% actors()$name == T) {
-          fight_name="Deathstalker Vincent"} else {fight_name= "Gordok Spirit"}
-    }else {
+        fight_name="Dr. Boom"
+      } else if(c("Deathstalker Vincent") %in% actors()$name == T) {
+        fight_name="Deathstalker Vincent"
+      } else {
+        fight_name= "Gordok Spirit"
+      }
+    } else {
       fight_temp <- parse_number(fight_name)
     }
     
@@ -983,10 +1004,10 @@ server <- function(input, output,session) {
       })
       
     }
-    
+
     #### + All casts extraction ####
     casts <- WCL_API2_request(sprintf(request_cast, 
-                                      as.character(extract_log_id(as.character(input$log_id))), 
+                                      log_id, 
                                       as.numeric(fight_temp), 
                                       as.numeric(actor_temp)))$data$reportData$report$events$data 
     # request <- WCL_API2_request(sprintf(request_damage,  ## Damage 
@@ -1008,7 +1029,7 @@ server <- function(input, output,session) {
       
       combatinfo <- WCL_API2_request(
         sprintf(request_spec, 
-                as.character(extract_log_id(as.character(input$log_id))), # Log ID
+                log_id, # Log ID
                 as.numeric(fight_temp),  # Fight ID
                 as.numeric(actor_temp))  # Actor ID
       )$data$reportData$report$events$data
@@ -1217,7 +1238,7 @@ server <- function(input, output,session) {
         #### Debuff LB extraction ####
         debuff_table <- WCL_API2_request(
           sprintf(request_debuff, ## Debuffs
-                  as.character(extract_log_id(as.character(input$log_id))),  ## Log
+                  log_id,  ## Log
                   as.numeric(fight_temp), ## Fight ID
                   as.numeric(targetID_code$id[1]), ## Target as sourceID
                   as.numeric(actor_temp))## Actor as targetID
@@ -1926,7 +1947,7 @@ server <- function(input, output,session) {
           ###### Request encounters available for each log
           IDsDP <- unique(DP_actors$id)
           
-          request_encounter <- sprintf(request_cast_2, as.character(extract_log_id(as.character(input$log_id))),
+          request_encounter <- sprintf(request_cast_2, log_id,
                                        as.numeric(fight_temp),
                                        IDsDP,
                                        IDsDP)
@@ -2145,7 +2166,7 @@ server <- function(input, output,session) {
           #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
           #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
           url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
-                        as.character(extract_log_id(as.character(input$log_id))),
+                        log_id,
                         "&entry.96171645=",
                         sapply(strsplit(actor_name, " "), `[`, 1),
                         "&entry.1179038397=",
@@ -2252,7 +2273,7 @@ server <- function(input, output,session) {
         
       } else {
         
-        showModal(error_diag(paste0(error3,as.character(extract_log_id(as.character(input$log_id))),
+        showModal(error_diag(paste0(error3,
                                     as.numeric(fight_temp), 
                                     as.numeric(actor_temp), 
                                     as.numeric(targetID_code$id[1])),3))
@@ -2329,7 +2350,7 @@ server <- function(input, output,session) {
       ###### Request encounters available for each log
       IDsDP <- unique(DP_actors$id)
       
-      request_encounter <- sprintf(request_cast_2, as.character(extract_log_id(as.character(input$log_id))),
+      request_encounter <- sprintf(request_cast_2,log_id ,
                                    as.numeric(fight_temp),
                                    IDsDP,
                                    IDsDP)
@@ -2539,7 +2560,7 @@ server <- function(input, output,session) {
       })   
       
       url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
-                    as.character(extract_log_id(as.character(input$log_id))),
+                    log_id,
                     "&entry.96171645=",
                     sapply(strsplit(actor_name, " "), `[`, 1),
                     "&entry.1228481340=",

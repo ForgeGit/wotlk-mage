@@ -928,7 +928,7 @@ server <- function(input, output,session) {
   ### STEP 2: Retrieve data and estimations ####
   
   observeEvent(input$submit_char_id, {
-    
+     
   output$plot_DP <- renderPlot({ plot.new()  })
      
     output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
@@ -1044,7 +1044,7 @@ server <- function(input, output,session) {
       
     }
     
-    
+     
    # ### FIght Metadata ####
     fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
     
@@ -1163,7 +1163,7 @@ server <- function(input, output,session) {
         filter(type=="damage" & 
                  targetID==as.numeric(targetID_code$id[1]))
       
-      
+       
       if(nrow(damage)!=0){
         
         ignite_table_debug <- damage %>% 
@@ -1502,6 +1502,8 @@ server <- function(input, output,session) {
           filter(sourceID == as.numeric(actor_temp) & targetID==as.numeric(actor_temp)#& sourceID==4
           )
         
+        dp_prep <- casts %>% 
+          filter(as.integer(abilityGameID)==48090 & type != "refreshbuff")
         
         mana <- casts %>% 
           mutate(row = map(classResources, ~ bind_rows(.x))) %>%
@@ -1510,6 +1512,7 @@ server <- function(input, output,session) {
           mutate(mana_per = amount/max)%>%
           filter(timestamp==max(timestamp))
         
+        rm(casts)
         
         ### Render output ######
         ignite_img <- "<img src='https://wow.zamimg.com/images/wow/icons/large/spell_fire_incinerate.jpg' height='20' width='20'/>"
@@ -1530,6 +1533,7 @@ server <- function(input, output,session) {
         
         lowest_hp <- min(resources$hitPoints,na.rm=T)
         max_sp <- max(resources$spellPower,na.rm=T)
+        rm(resources)
         
         mana_end_n <- round(min(mana$mana_per,na.rm=T),2)*100
         
@@ -1892,7 +1896,7 @@ server <- function(input, output,session) {
         
         if(fight_name != "Dr. Boom"){
 
-          
+           
           # ### FIght Metadata ####
           fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
           
@@ -1923,7 +1927,7 @@ server <- function(input, output,session) {
                                        IDsDP,
                                        IDsDP)
           
-          request_encounter<-request_encounter[1:5][!is.na(request_encounter[1:5])]  # Temporary until a sensitivity analysis is made? (4)
+          request_encounter<-request_encounter[1:4][!is.na(request_encounter[1:4])]  # Temporary until a sensitivity analysis is made? (4)
           
           
           a <- lapply(seq_along(request_encounter), function(i) {  
@@ -1994,8 +1998,7 @@ server <- function(input, output,session) {
             ungroup() %>%
             pivot_longer(cols=starts_with("ID"))
           
-          b <- casts %>% 
-            filter(as.integer(abilityGameID)==48090 & type != "refreshbuff")%>% 
+          b <- dp_prep %>% 
             mutate(timestamp =  (timestamp-fightStartTime)/1000)
           
           if(nrow(b) == 0){
@@ -2024,7 +2027,7 @@ server <- function(input, output,session) {
             summarise(med_data = mean(med_value,na.rm=T),
                       max_data = mean(max_value,na.rm=T) )
           
-          
+           
           
           observe({
 
@@ -2180,8 +2183,8 @@ server <- function(input, output,session) {
           
           #nrow(Marked_Data)
           
-          res <- POST(url = url)   
-          
+          POST(url = url)   
+           
         }
         #writesheet("user1", 700)  
         
@@ -2540,7 +2543,7 @@ server <- function(input, output,session) {
       
       #nrow(Marked_Data)
       
-      res <- POST(url = url) 
+      POST(url = url) 
       
       
     } else {  

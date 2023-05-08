@@ -103,6 +103,8 @@ error1 <-"It looks like the log you just linked does not exist, has no mages, or
 error1_A <- "This log won't have Mage metrics."
 error2 <-"It looks like the log you just linked does not have valid fights for analysis, or there is something wrong with the app. Contact Forge#0001 on discord or try refreshing."
 error3 <- "It looks like that character has no data for that fight. If you think this is an error, contact Forge#0001 on discord or try refreshing"
+
+
 error_diag <-function(x,y) {
   
   x <- modalDialog(
@@ -599,6 +601,8 @@ server <- function(input, output,session) {
                paste0("&nbsp;&nbsp;&nbsp;&nbsp; Consider asking at the <a href='https://discord.gg/eszwRckRmA'>Mage Discord.</a> for a proper explanation on the available options. "),
                '<br/>',
                paste0("<b>- Main Spell Queue Window Issues::</b>"),
+               paste0('&nbsp;&nbsp;&nbsp;&nbsp; You either: are lagging a lot, you were close to GCD cap, or your spell queue window is broken.'),
+               paste0('&nbsp;&nbsp;&nbsp;&nbsp; If it is the latter, follow the next steps:'),
                paste0('&nbsp;&nbsp;&nbsp;&nbsp; Run the following command: /dump GetCVar("SpellQueueWindow").'),
                paste0('&nbsp;&nbsp;&nbsp;&nbsp; If the result is a value significantly lower than "400", you might be creating a lot of gaps between your casts.'),
                paste0('&nbsp;&nbsp;&nbsp;&nbsp; In order to fix it, please use the following: /console SpellQueueWindow 400.'),
@@ -2025,7 +2029,7 @@ server <- function(input, output,session) {
           
           a2 <- a %>% group_by(timestamp) %>% 
             summarise(med_data = mean(med_value,na.rm=T),
-                      max_data = mean(max_value,na.rm=T) )
+                      max_data = mean(max_value,na.rm=T) ) %>% ungroup()
           
            
           
@@ -2255,22 +2259,34 @@ server <- function(input, output,session) {
         
       }
       
-    } else if(spec!="No Spec"){
+    } else if(is.numeric(fight_temp) & 
+              nrow(actors() %>%
+                   filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter")>1)){
       
-      showModal(modalDialog(
-        title = "Error 4",
-        paste0("It looks like that character is ",spec," Mage on that log. If you think this is an error, contact Forge#0001 on discord or try refreshing"),
-        easyClose = TRUE,
-        footer = tagList(
-          modalButton("OK")
-        )
-      ))
+      output$summary_ignite_1 <- renderUI({
+        
+        if(spec!="No Spec"){text_forced <- paste0("Spec not yet supported:",spec) } else {text_forced <- paste0("Mage not found or an error ocurred.")  }
+        
       
+     # str_summ1 <- paste0("- Expected ignite damage before target death<sup>*</sup>: " )
       
-    } else if(is.numeric(fight_temp) & nrow(actors()%>% 
-                                            filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter")>1)){ 
+      HTML(paste(
+        "<br/",
+        
+        paste0("<h4> <b> NO MAGE METRICS AVAILABLE </b> </h4>"),
+        paste0("<h4> <b> CHECK 'DEMONIC PACT' TAB </b> </h4>"),
+        text_forced,
+        "<br/",
+        sep = '<br/>'))
       
-      
+    })
+
+      output$summary_header <- renderUI({
+        
+        
+        HTML(paste(paste0("<h3> Metrics for ",fight_name,"</h3>"),
+                   sep = '<br/>'))
+      })
       
       # ### FIght Metadata ####
       fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
@@ -2389,11 +2405,11 @@ server <- function(input, output,session) {
         ungroup() %>%
         pivot_longer(cols=starts_with("ID"))
       
-
-        b <- data.frame(timestamp = c(0,
-                                      0),
-                        type=c("applybuff","removebuff"))  
-
+      
+      b <- data.frame(timestamp = c(0,
+                                    0),
+                      type=c("applybuff","removebuff"))  
+      
       
       b<- b %>% 
         select(timestamp,type) %>% 
@@ -2432,8 +2448,8 @@ server <- function(input, output,session) {
                         color = "#3586C4", fill = "#A7D4F6",
                         method = 'gam',
                         formula = y ~ s(x, bs = "cs")) +
-          #  geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
-           #                         ymin = -Inf, ymax = Inf,colour="Demonic Pact"),
+            #  geom_rect(data = b, aes(xmin = applybuff , xmax = removebuff, 
+            #                         ymin = -Inf, ymax = Inf,colour="Demonic Pact"),
             #          fill = "#B0B0F7",lwd=0, alpha = 0.25)  + 
             theme_bw()  + 
             
@@ -2462,9 +2478,9 @@ server <- function(input, output,session) {
             
             scale_colour_manual("", 
                                 breaks = c(#"Demonic Pact", 
-                                           "Spellpower"),
+                                  "Spellpower"),
                                 values = c(#"Demonic Pact"="#ba87ee",
-                                           "Spellpower"="#6464E1")) +
+                                  "Spellpower"="#6464E1")) +
             scale_linetype_manual("", 
                                   
                                   breaks = c("Trend"),
@@ -2477,13 +2493,13 @@ server <- function(input, output,session) {
               #  nrow=1,
               override.aes = list(
                 linetype = c(#0,
-                             1),
+                  1),
                 size = c(#1, 
-                         1),
+                  1),
                 color = c(#"#B0B0F7", 
-                                   "#8788EE"),
-                fill = c(#"#B0B0F7", 
-                                  NA)
+                  "#8788EE"),
+                           fill = c(#"#B0B0F7", 
+                             NA)
               ),
               order=1
             ),
@@ -2519,17 +2535,9 @@ server <- function(input, output,session) {
           #  rm(a,b)
           
         })
+        
+      })   
       
-      })     
-      ###### Leaderboard ####
-      
-      #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
-      #   water <- URLencode(as.character(water))
-      #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
-      #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
-      #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
-      #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
-      #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
       url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),
                     as.character(extract_log_id(as.character(input$log_id))),
                     "&entry.96171645=",
@@ -2544,6 +2552,28 @@ server <- function(input, output,session) {
       #nrow(Marked_Data)
       
       POST(url = url) 
+      
+    } else if( spec!="No Spec"  ){ 
+      
+      showModal(modalDialog(
+        title = "Error 4",
+        paste0("It looks like that character is ",spec," Mage on that log. No metrics for mages will be applied. I am unsure if there is demonic pact? Please contact Forge#0001 on discord or try refreshing if you think this is an error."),
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("OK")
+        )
+      ))
+      
+      ###### Leaderboard ####
+      
+      #https://medium.com/@marinebanddeluxe/create-your-serverless-database-with-google-sheets-and-shiny-part-i-26e69b8253db,
+      #   water <- URLencode(as.character(water))
+      #         # #   leaderboard[nrow(leaderboard)+1,1] <- as.character(extract_log_id(as.character(input$log_id)))  
+      #  #  leaderboard[nrow(leaderboard),2] <- as.character(actor_name) 
+      #  #  leaderboard[nrow(leaderboard),3] <- round(ignite_table$Munch_NET_2)*-1 
+      #   # leaderboard[nrow(leaderboard),4] <-  round((as.integer(nrow(pyro_n))-as.integer(nrow(pyro_hard_cast)))/as.integer(nrow(hot_streak_n)), digits = 2)
+      #   #leaderboard[nrow(leaderboard),5] <- targetID_code$name[1] 
+    
       
       
     } else {  

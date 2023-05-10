@@ -672,7 +672,7 @@ server <- function(input, output,session) {
 
 ########################################################  
   
-  lead_table <- read_sheet(Sys.getenv("LEADERBOARD"),sheet = "Sheet2") 
+ #lead_table <- read_sheet(Sys.getenv("LEADERBOARD"),sheet = "Sheet2") 
   
 #  reactive({
    

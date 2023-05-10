@@ -1933,7 +1933,7 @@ server <- function(input, output,session) {
           #####DEMONIC PACT ############
           
           DP_actors <- actors() %>% 
-            filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
+            filter(subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
             select(id) %>%
             sample_frac()# Temporary until a sensitivity analysis is made? (4)
           # mutate(name = paste0(name, " (ID:",id,")"))
@@ -2336,7 +2336,7 @@ server <- function(input, output,session) {
       #####DEMONIC PACT ############
       
       DP_actors <- actors() %>% 
-        filter(subType=="Rogue" | subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
+        filter(subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
         select(id) %>%
         sample_frac()# Temporary until a sensitivity analysis is made? (4)
       # mutate(name = paste0(name, " (ID:",id,")"))

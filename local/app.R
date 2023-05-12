@@ -13,7 +13,7 @@ library(stringr)
 library(purrr)
 library(ggplot2)
 library(Cairo)
-
+library(pryr) #test
 #library(gargle)
 
 source("./ui.R")

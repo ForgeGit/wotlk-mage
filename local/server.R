@@ -2054,7 +2054,6 @@ server <- function(input, output,session) {
           
            
           
-          observe({
 
             output$plot_DP <- renderPlot(res=96,{     
    
@@ -2151,8 +2150,7 @@ server <- function(input, output,session) {
           ############################################################################################################################
           
         #  rm(a,b)
-          
-          })
+
             
  })
           

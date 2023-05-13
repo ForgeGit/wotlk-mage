@@ -2449,7 +2449,6 @@ server <- function(input, output,session) {
       
       
       
-      observe({
         
         output$plot_DP <- renderPlot(res=96,{     
           
@@ -2553,8 +2552,7 @@ server <- function(input, output,session) {
           
           #  rm(a,b)
           
-        })
-        
+
       })   
       
       url <- paste0(as.character(Sys.getenv("LEADERBOARD_ID")),

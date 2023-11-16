@@ -978,7 +978,7 @@ server <- function(input, output,session) {
   
   ### STEP 2: Retrieve data and estimations ####
   
-  observeEvent(input$submit_char_id, {
+observeEvent(input$submit_char_id, {
      
   output$plot_DP <- renderPlot({ plot.new()  })
      
@@ -1950,12 +1950,12 @@ server <- function(input, output,session) {
                               sep = '<br/>'))) }
         })
         
-        
-        ###### Send metrics and DP plotting ####
+
+###### Send metrics and DP plotting ####
         
         if(fight_name != "Dr. Boom"){
-
-           
+          
+          
           # ### FIght Metadata ####
           fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
           
@@ -2086,12 +2086,11 @@ server <- function(input, output,session) {
             summarise(med_data = mean(med_value,na.rm=T),
                       max_data = mean(max_value,na.rm=T) ) %>% ungroup()
           
-           
+        
           
 
-            output$plot_DP <- renderPlot(res=96,{     
-   
-          
+output$plot_DP <- renderPlot(res=96,{     
+  
           ggplot() +
             geom_point(data=a %>% 
                          mutate(timestamp = timestamp-fightStartTime_1000)%>%
@@ -2183,10 +2182,10 @@ server <- function(input, output,session) {
           #384A8A
           ############################################################################################################################
           
-        #  rm(a,b)
+        #  
 
-            
- })
+          })
+
           
           ###### Leaderboard ####
           
@@ -2366,6 +2365,14 @@ server <- function(input, output,session) {
       boss_name_singular <- sapply(strsplit(targetID_code$name[1], " "), `[`, 1) 
       ##############################################################
       #####DEMONIC PACT ############
+      
+      
+      if( exists("a") & exists("b")  ){ 
+        rm(a,b)
+        ls(envir = .GlobalEnv)
+        
+      }
+      
       
       DP_actors <- actors() %>% 
         filter(subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
@@ -2669,5 +2676,5 @@ server <- function(input, output,session) {
     }) # End of Step 3 
     
   }) # End of Step 2
-  
+
 } # END OF SERVER

@@ -30,3 +30,12 @@ shinyApp(
 
 #shiny::runApp()
 #
+#
+#
+#
+library(profvis)
+
+profvis({ runApp('./') }  
+        , prof_output = './profiling')
+
+profvis(prof_input = './profiling') 

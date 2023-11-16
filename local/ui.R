@@ -114,9 +114,9 @@ ui <- fluidPage(
       br(),
       "- If you do not interact with the app for an extended period, it will 'grey out.' If this occurs, please refresh the page. If the app crashes repeatedly, try again later or contact me.",
       br(),
-      "- The app currently supports only a limited number of bosses - PTR INCLUDED",
+      "- The app currently supports a limited number of bosses for Ulduar/ToC. All ICC bosses are included as of the 16th of November.",
       br(),
-      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale. Partially Freya. All of Naxx except 4H. )",
+      "(Algalon, Thorim, Vezax, Ignis, Kolo, Auriaya, Hodir, and Razorscale. Partially Freya. All of Naxx except 4H. Jaraxxus and Anub. All ICC except gunship, council and dreamwalker.)",
       br(),
       tags$span(HTML("<span style='color:#D78613;'>If you happen to encounter any issues with an encounter or log, feel free to reach out to me on Discord.</span>")),
       br(),
@@ -135,7 +135,7 @@ ui <- fluidPage(
       actionButton("debug_id","debug table"),
       br(),
       br(), 
-      span("Forge#0001 [Vivax-Pagle(US)]", style = "font-style:italic"),
+      span("Discfordge on discord [Vivax-Pagle(US)]", style = "font-style:italic"),
       br(),
       tags$a(href= "https://discord.gg/eszwRckRmA", "Mage Discord"),
       br(),
@@ -204,42 +204,6 @@ ui <- fluidPage(
                              ),
                            fluidRow(
                              column(width = 9, withSpinner(plotOutput("plot_DP"),color="red"))
-                           )
-                  ),
-                  tabPanel("Scoreboard",
-                           fluidRow(      br(),
-                                          
-                                          h4("Last update: ", Sys.Date()),
-                                          br(),
-                                          column(width = 5, withSpinner(DTOutput("table_A_UI"),color="red")
-                                          )) ,
-                           fluidRow(      br(),
-                                          
-                                         # h4("Highest Pyro to Hotstreak ratio"),
-                                          
-                                          column(width = 5, DTOutput("table_B_UI"))
-                                          
-                           ),
-                           fluidRow(      br(),
-                                          
-                                         # h4("Biggest munch recorded"),
-                                          
-                                          column(width = 5, DTOutput("table_C_UI"))
-                                          
-                           ),
-                           fluidRow(      br(),
-                                          
-                                         # h4("Biggest vomit recorded"),
-                                          
-                                          column(width = 5, DTOutput("table_D_UI"))
-                                          
-                           ),
-                           fluidRow(      br(),
-                                          
-                                        #  h4("Biggest ignite tick recorded"),
-                                          
-                                          column(width = 5, DTOutput("table_E_UI"))
-                                          
                            )
                   )
       )

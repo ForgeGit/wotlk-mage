@@ -56,7 +56,12 @@ boss_list <- c(757, #Alga
                753, #
                101107:101120, # All of naxx except 4H
                #629,
-                633, 645 #
+                633, 645, #
+               845,846,
+               #847, Gunship
+               848,849,850,851,852,853,
+               854,  
+               855,856
 ) 
 
 npc_exclusions <- c("Hodir's Fury",
@@ -71,7 +76,18 @@ npc_exclusions <- c("Hodir's Fury",
                     "Thorim Event Bunny",
                     "Freya's Ward",
                     "Grobbulus Cloud",
-                    "Maexxna Spiderling")
+                    "Maexxna Spiderling",
+                    "Army of the Dead", 
+                    "Ymirjar Deathbringer",
+                    "Blood Orb Controller", 
+                    "Blood Spider", 
+                    "Blood Parasite",
+                    "Darkfallen Blood Knight", 
+                    "The Skybreaker", 
+                    "Servant of the Throne", 
+                    "The Damned",
+                    "Blood Beast"
+)
 #########################################################################################
 url <- "https://classic.warcraftlogs.com/api/v2"
 
@@ -301,7 +317,9 @@ spell_filter <- c(1,60488,5019,# necromatic power and misc shoot
                   54043, #retri aura
                   42897, 42896 , 30451 , 42894, #Arcane Blasts (all) 
                   42937,42198, 42211, 42210, 42213, 42209, 42212,42208, # blizzards
-                  28715 #Flame Cap
+                  28715, #Flame Cap,
+                  67760, 67714 #Pillar Flame
+                  
 )
 
 
@@ -555,6 +573,7 @@ server <- function(input, output,session) {
   output$Changelog <- renderUI({
     
     HTML(paste(paste0("<h5><b>Changelog (dd/mm/yyyy):</b></h5>"),
+               paste0("- 16/11/2023: Support for ICC and removed all munching alerts now irrelevant."),
                paste0("- 07/05/2023: Support for Jaraxxus and Anub'rak (TOGC PTR)"),
                paste0("- 06/05/2023: 'Demonic Pact' measures and graphic - Currently under testing"),
                paste0("- 05/05/2023: Added 'GCD Cap' detection"),
@@ -844,6 +863,18 @@ server <- function(input, output,session) {
                                           # encounterID_2 == '629'  ~ 'Icehowl',
                                            encounterID_2 == '633'  ~ 'Jaraxxus',
                                            encounterID_2 == '645'  ~ "Anub'arak",
+                                          encounterID_2 == '845'  ~ "Lord Marrowgar",
+                                          encounterID_2 == '846'  ~ "Lady Deathwhisper",
+                                          #encounterID_2 == '847'  ~ "Icecrown Gunship Battle",
+                                          encounterID_2 == '848'  ~ "Deathbringer Saurfang",
+                                          encounterID_2 == '849'  ~ "Festergut",
+                                          encounterID_2 == '850'  ~ "Rotface",
+                                          encounterID_2 == '851'  ~ "Professor Putricide",
+                                          encounterID_2 == '852'  ~ "Blood Council",
+                                          encounterID_2 == '853'  ~ "Queen Lana'thel",
+                                          encounterID_2 == '854'  ~ "Valithria Dreamwalker",
+                                          encounterID_2 == '855'  ~ "Sindragosa",
+                                          encounterID_2 == '856'  ~ "The Lich King",
                                            
                                            TRUE ~ encounterID_2),
                  
@@ -979,6 +1010,8 @@ server <- function(input, output,session) {
         fight_name="Dr. Boom"
       } else if(c("Deathstalker Vincent") %in% actors()$name == T) {
         fight_name="Deathstalker Vincent"
+      } else if(c("Blood Council") %in% fight_name == T) {
+        fight_name=c("Prince Valanar","Prince Keleseth","Prince Taldaram")
       } else {
         fight_name= "Gordok Spirit"
       }
@@ -1620,12 +1653,12 @@ server <- function(input, output,session) {
                          " = ",
                          prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE))
           
-          if(Munch_NET_result > 0 & Munch_NET_result >= 20) { 
+          if(Munch_NET_result > 0 & Munch_NET_result >= 50) { 
             ## Vomit trigger
             str5 <- paste0("<font color=\"#61B661\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
                            " more than expected. <br> This means VOMIT was present at some point.</b></font>")
             ## Munch Trigger
-          } else if(Munch_NET_result < 0 & Munch_NET_result<= -20){ 
+          } else if(Munch_NET_result < 0 & Munch_NET_result<= -50){ 
             str5 <- paste0("<font color=\"#BE5350\"><b> The total ignite damage dealt was ",prettyNum(Munch_NET_result,big.mark=",",scientific=FALSE),
                            " less than expected. <br> This means MUNCH was present at some point.</b></font>")
             ## Expected ignite
@@ -1650,7 +1683,8 @@ server <- function(input, output,session) {
             str_summ1, 
             str2, 
             paste0("<b>Result:</b> ",str4),
-            "<br/",
+            "<br/", 
+            paste0("<sub>As of Phase 3 (June 23, 2023), munching is no longer an issue. However, some fights might cause your ignite to get 'munched'.</sub>"),
             sep = '<br/>'))
           
         })
@@ -1694,22 +1728,22 @@ server <- function(input, output,session) {
                                     nrow(casts_fb_pyro %>% 
                                            filter(delay == 0)),"</font>"
               )
-              str_alert <- paste0("<font color=\"#D78613\">Your munching prevention method might be failing ocasionally.<sup>4</sup></font>")
+              str_alert <- paste0("<font color=\"#D78613\">You seem to ocasionally have some delay between your casts. <sup>4</sup></font>")
               
             } else if((nrow(casts_fb_pyro %>% 
                             filter(delay == 0)) / nrow(casts_fb_pyro) ) >= 0.40  & 
                       sub_spec=="TTW"){
               
-              str_delay_5 <- paste0("<font color=\"#BE5350\"> - Delays at 0ms: ", 
-                                    nrow(casts_fb_pyro %>% 
-                                           filter(delay == 0)),"</font>")
-              str_alert <- paste0("<font color=\"#BE5350\">Are you using a WA for munching?<sup>4</sup></font>")
-              
-            } else if(sub_spec=="TTW") {       
               str_delay_5 <- paste0("<font color=\"#54A5BE\"> - Delays at 0ms: ", 
                                     nrow(casts_fb_pyro %>% 
                                            filter(delay == 0)),"</font>")
-              str_alert <- paste0("<font color=\"#54A5BE\">Your WA or anti-munching method seems to be working.<sup>4</sup></font>")
+             str_alert <- paste0("<font color=\"#54A5BE\">Your delay seems to be correct.<sup>4</sup></font>")
+              
+            } else if(sub_spec=="TTW") {       
+              str_delay_5 <- paste0("<font color=\"#BE5350\"> - Delays at 0ms: ", 
+                                    nrow(casts_fb_pyro %>% 
+                                           filter(delay == 0)),"</font>")
+              str_alert <- paste0("<font color=\"#BE5350\">You seem to have delay between your previous cast and your insta-pyroblasts.<sup>4</sup></font>")
               
             } else {
               str_delay_5 <- paste0("- Delays at 0ms: ", 
@@ -1719,7 +1753,7 @@ server <- function(input, output,session) {
               
             }
           }else if(sub_spec=="FFB") {
-            str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. If you're playing FFB put everything you think you know about ignite munching in a box and close the lid and slide it under your bed.<sup>amyy#7377</sup></font>")
+           # str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. If you're playing FFB put everything you think you know about ignite munching in a box and close the lid and slide it under your bed.<sup>amyy#7377</sup></font>")
             #str_alert <- paste0("<font color=\"#54A5BE\">Delays between fireballs and pyroblast are only relevant for TTW mages. </font>")
             str_delay_5 <- paste0("- Delays at 0ms: ", 
                                   nrow(casts_fb_pyro %>% 

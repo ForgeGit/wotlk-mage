@@ -89,29 +89,37 @@ npc_exclusions <- c("Hodir's Fury",
                     "Blood Beast"
 )
 #########################################################################################
-url <- "https://classic.warcraftlogs.com/api/v2"
 
 WCL_API2_request <- function(request) {
   
-  request <- jsonlite::toJSON(list(query=request),
-                              auto_unbox=TRUE, 
-                              bigint_as_char=F) 
-  
-  response <- POST(url,
-                   add_headers("Content-Type" = "application/json",
-                               "Authorization"= paste0("Bearer ",
-                                                       Sys.getenv("TOKEN"))),
-                   body = request,
-                   content_type_json(),
-                   encode = "json")
-  
-  response_formated <- fromJSON(content(response, 
-                                        as = "text",
-                                        encoding="UTF-8"), 
-                                bigint_as_char=TRUE)
-  
-  return(response_formated)
+  tryCatch({
+    
+    request <- jsonlite::toJSON(list(query=request),
+                                auto_unbox=TRUE,
+                                bigint_as_char=F)
+    
+    header <- add_headers("Content-Type" = "application/json",
+                          "Authorization"= paste0("Bearer ",
+                                                  Sys.getenv("TOKEN")))
+    response <- POST("https://classic.warcraftlogs.com/api/v2",
+                     header,
+                     body = request,
+                     content_type_json(),
+                     encode = "json")
+    
+    fromJSON(content(response,
+                     as = "text",
+                     encoding="UTF-8"),
+             bigint_as_char=TRUE)
+    
+    
+  }, error = function(e) {
+    # Handle the error here or return an informative message
+    cat("Error in WCL_API2_request:", e$message, " Request: ",request,"\n")
+    return(NULL)  # Return an appropriate value or error indicator
+  })
 }
+
 
 ######### Errors ##########
 
@@ -561,6 +569,8 @@ server <- function(input, output,session) {
   })
   
   stopObserver <- function() {
+    rm(list = ls())
+    gc()
     stop("Observer stopped after 5 minutes.")
   }
   
@@ -681,13 +691,13 @@ server <- function(input, output,session) {
   
   #### LEADERBOARD (LOAD) ####
   
-  gs4_deauth()
-  option_table_list <- list(paging=F, 
-                            columnDefs = list(
-                              list(targets = '_all', className = 'dt-center'),
-                              list( targets = 2 ,width = '50px')),
-                            dom = 't'
-  )
+  # gs4_deauth()
+  # option_table_list <- list(paging=F, 
+  #                           columnDefs = list(
+  #                             list(targets = '_all', className = 'dt-center'),
+  #                             list( targets = 2 ,width = '50px')),
+  #                           dom = 't'
+  # )
 
 ########################################################  
   
@@ -760,25 +770,25 @@ server <- function(input, output,session) {
   
     
 
-
     
-  ##### + Actors list ######
-  
-  actors <-eventReactive(input$submit_log_id, {
     
-    if(nchar(input$log_id)>5){ # Valid log?
+    ##### + Actors list ######
+    
+    actors <-eventReactive(input$submit_log_id, {
       
-      ###### Actor Download ######
-      actors<-WCL_API2_request(
-        sprintf(
-          request_actors, # Request 
-          as.character(extract_log_id(as.character(input$log_id))) # log ID
-        )
-      )$data$reportData$report$masterData$actors
-      
-      return(actors)
-      
-      if(!is.null(actors)){ # Valid log? part 2
+      if(nchar(input$log_id)>5){ # Valid log?
+        
+        ###### Actor Download ######
+        actors<-WCL_API2_request(
+          sprintf(
+            request_actors, # Request 
+            as.character(extract_log_id(as.character(input$log_id))) # log ID
+          )
+        )[["data"]][["reportData"]][["report"]][["masterData"]][["actors"]] 
+        
+        return(actors)
+        
+        if(!is.null(actors)){ # Valid log? part 2
         
         actors %>% 
           filter(subType %in% c("NPC","Boss","Mage","Unknown",
@@ -821,7 +831,7 @@ server <- function(input, output,session) {
         request_fights, # Request 
         as.character(extract_log_id(as.character(input$log_id))) # log ID
       )
-    )$data$reportData$report$fights
+    )[["data"]][["reportData"]][["report"]][["fights"]]
     
     if(!is.null(fights)){
       
@@ -1042,7 +1052,7 @@ observeEvent(input$submit_char_id, {
     casts <- WCL_API2_request(sprintf(request_cast, 
                                       log_id, 
                                       as.numeric(fight_temp), 
-                                      as.numeric(actor_temp)))$data$reportData$report$events$data 
+                                      as.numeric(actor_temp)))[["data"]][["reportData"]][["report"]][["events"]][["data"]] 
     # request <- WCL_API2_request(sprintf(request_damage,  ## Damage 
     #                               as.character(extract_log_id(as.character(input$log_id))),
     #                               as.numeric(fight_temp), 
@@ -1065,7 +1075,7 @@ observeEvent(input$submit_char_id, {
                 log_id, # Log ID
                 as.numeric(fight_temp),  # Fight ID
                 as.numeric(actor_temp))  # Actor ID
-      )$data$reportData$report$events$data
+      )[["data"]][["reportData"]][["report"]][["events"]][["data"]] 
       
       
     } else if (pre_combatant_trigger==T){
@@ -1275,7 +1285,7 @@ observeEvent(input$submit_char_id, {
                   as.numeric(fight_temp), ## Fight ID
                   as.numeric(targetID_code$id[1]), ## Target as sourceID
                   as.numeric(actor_temp))## Actor as targetID
-        )$data$reportData$report$events$data %>% 
+        )[["data"]][["reportData"]][["report"]][["events"]][["data"]]  %>% 
           
           filter(abilityGameID ==55360 & 
                    type == "refreshdebuff")
@@ -1954,7 +1964,7 @@ observeEvent(input$submit_char_id, {
 ###### Send metrics and DP plotting ####
         
         if(fight_name != "Dr. Boom"){
-          
+        
           
           # ### FIght Metadata ####
           fightStartTime <-  fights() %>% filter(id == fight_temp) %>% select(startTime) %>% pull(.)
@@ -1988,30 +1998,23 @@ observeEvent(input$submit_char_id, {
           
           request_encounter<-request_encounter[1:4][!is.na(request_encounter[1:4])]  # Temporary until a sensitivity analysis is made? (4)
           
+          a <- map(request_encounter, ~WCL_API2_request(.x)[["data"]][["reportData"]][["report"]][["events"]][["data"]]) 
           
-          a <- lapply(seq_along(request_encounter), function(i) {  
-            
-            response <- WCL_API2_request(request_encounter[i])$data$reportData$report$events$data
-            
-            if(length(response) != 0) {
-              
-              # response <- rename(response,fightID = id)
-              
-            } else {
-              # response <- rename(response,fightID = id)
-            }
-            return(response)
-          })
+          # a <- sapply(request_encounter, function(encounter) {
+          #   WCL_API2_request(encounter)$data$reportData$report$events$data
+          # })
+          # 
           rm(request_encounter)
-          a <- do.call(bind_rows, a)
-          
+          a<- collapse::rowbind(a,fill=T)
+
           a_temp <- a %>% 
             filter(type=="combatantinfo")
           
           if(nrow(a_temp)>0){
             a_temp <- a_temp %>%
               select(type,sourceID,auras)
-            a_temp <-   do.call(bind_rows, a_temp$auras) %>%
+            
+            a_temp <- collapse::rowbind(a_temp$auras,fill=T) %>%
               filter(ability==57399)} else { 
                 
                 a_temp <- data.frame(source=as.integer(0))
@@ -2037,6 +2040,7 @@ observeEvent(input$submit_char_id, {
             pull(targetID)
           
           desired_names <- unique(union(desired_names, a_temp$source))
+          
           rm(a_temp)
           
           a <- a %>%
@@ -2086,15 +2090,13 @@ observeEvent(input$submit_char_id, {
             summarise(med_data = mean(med_value,na.rm=T),
                       max_data = mean(max_value,na.rm=T) ) %>% ungroup()
           
-        
           
-
-output$plot_DP <- renderPlot(res=96,{     
-  
-          ggplot() +
-            geom_point(data=a %>% 
-                         mutate(timestamp = timestamp-fightStartTime_1000)%>%
-                         na.omit(.), 
+          output$plot_DP <- renderPlot(res=96,{     
+            
+            ggplot() +
+              geom_point(data=a %>% 
+                           mutate(timestamp = timestamp-fightStartTime_1000)%>%
+                           na.omit(.), 
                        aes(timestamp, value),alpha = 0.1, color="black", fill=NA, size = 2) +
             geom_smooth(data=a %>% 
                           mutate(timestamp = timestamp-fightStartTime_1000) %>%
@@ -2367,13 +2369,6 @@ output$plot_DP <- renderPlot(res=96,{
       #####DEMONIC PACT ############
       
       
-      if( exists("a") & exists("b")  ){ 
-        rm(a,b)
-        ls(envir = .GlobalEnv)
-        
-      }
-      
-      
       DP_actors <- actors() %>% 
         filter(subType=="Warrior" | subType=="DeathKnight"  | subType=="Hunter") %>% 
         select(id) %>%
@@ -2399,7 +2394,7 @@ output$plot_DP <- renderPlot(res=96,{
       
       a <- lapply(seq_along(request_encounter), function(i) {  
         
-        response <- WCL_API2_request(request_encounter[i])$data$reportData$report$events$data
+        response <- WCL_API2_request(request_encounter[i])[["data"]][["reportData"]][["report"]][["events"]][["data"]] 
         
         if(length(response) != 0) {
           
@@ -2411,7 +2406,8 @@ output$plot_DP <- renderPlot(res=96,{
         return(response)
       })
       rm(request_encounter)
-      a <- do.call(bind_rows, a)
+      a <- collapse::rowbind(a,fill=T) 
+      #a <- do.call(bind_rows, a)
       
       a_temp <- a %>% 
         filter(type=="combatantinfo")
@@ -2419,7 +2415,8 @@ output$plot_DP <- renderPlot(res=96,{
       if(nrow(a_temp)>0){
         a_temp <- a_temp %>%
           select(type,sourceID,auras)
-        a_temp <-   do.call(bind_rows, a_temp$auras) %>%
+        
+        a_temp <- collapse::rowbind(a_temp$auras,fill=T) %>%
           filter(ability==57399)} else { 
             
             a_temp <- data.frame(source=as.integer(0))
@@ -2647,6 +2644,9 @@ output$plot_DP <- renderPlot(res=96,{
       ))
     }
     
+    
+}) # End of Step 2
+    
     ### STEP 3: Table debug ####
     
     observeEvent(input$debug_id, {
@@ -2675,6 +2675,4 @@ output$plot_DP <- renderPlot(res=96,{
       
     }) # End of Step 3 
     
-  }) # End of Step 2
-
 } # END OF SERVER

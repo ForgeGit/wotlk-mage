@@ -13,6 +13,7 @@ library(stringr)
 library(purrr)
 library(ggplot2)
 library(Cairo)
+library(collapse)
 #library(gargle)
 
 #source("./helpers.R")

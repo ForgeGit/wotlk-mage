@@ -578,6 +578,8 @@ server <- function(input, output,session) {
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   #output$DP_info <- renderUI({ HTML(paste(paste0("")))})
+  output$table_GUID <- renderDataTable({ data.frame()  })
+  
   
   #### CHANGELOG####
   output$Changelog <- renderUI({
@@ -910,6 +912,9 @@ server <- function(input, output,session) {
     
   })
   
+    
+    
+    
   ### STEP 1.5: Submit log ID (display) ####
   
   observeEvent(input$submit_log_id, {
@@ -981,6 +986,20 @@ server <- function(input, output,session) {
       showModal(error_diag(error2,2))
       updateSelectInput(session, "fight", choices = fights())
       }
+   
+    
+    ## GUID table generation
+    
+    output$table_GUID <- renderDataTable({ 
+      
+      actors() %>% select(-c(id,server)) %>% 
+        filter(subType %in% c("Mage","DeathKnight",
+                              "Druid","Hunter","Paladin",
+                              "Priest","Rogue","Shaman","Warlock","Warrior")) %>%
+                 arrange(gameID)
+      })
+    
+    
     
   })
   

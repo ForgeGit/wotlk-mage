@@ -1001,6 +1001,12 @@ server <- function(input, output,session) {
     
     
     
+    POST(url = paste0(as.character(Sys.getenv("LOG_ID_REGISTRY")),
+                      as.character(input$log_id)
+    )) 
+    
+    
+    
   })
   
   

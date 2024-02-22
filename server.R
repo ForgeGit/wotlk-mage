@@ -1922,7 +1922,7 @@ observeEvent(input$submit_char_id, {
             "<br/",
             paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
             paste0("<i><sup>2</sup> # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
-            paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left) - Sometimes your WA might fail due to logging error, and not really because of the WA. One out of 10-20 casts is likely a false positive.</i>"), 
+            paste0("<i><sup>4</sup> You are either lagging or using an outdated WA for munching, which you should uninstall. Unsure of what this means? Ask in Mage Discord (Link to your left).</i>"), 
             paste0("<i><sup>5</sup> Hot Streaks not fully used. Not fully consumed before it got 'refreshed'. i.e. You got hot streak while you had hot streak.</i>"), 
             paste0("<i><sup>*</sup> Before partial resists.</i>"), 
             sep = '<br/>'))

@@ -578,6 +578,8 @@ server <- function(input, output,session) {
   
   output$summary_ignite_1 <- renderUI({ HTML(paste(paste0("")))})
   #output$DP_info <- renderUI({ HTML(paste(paste0("")))})
+  output$table_GUID <- renderDataTable({ data.frame()  })
+  
   
   #### CHANGELOG####
   output$Changelog <- renderUI({
@@ -910,6 +912,9 @@ server <- function(input, output,session) {
     
   })
   
+    
+    
+    
   ### STEP 1.5: Submit log ID (display) ####
   
   observeEvent(input$submit_log_id, {
@@ -981,6 +986,20 @@ server <- function(input, output,session) {
       showModal(error_diag(error2,2))
       updateSelectInput(session, "fight", choices = fights())
       }
+   
+    
+    ## GUID table generation
+    
+    output$table_GUID <- renderDataTable({ 
+      
+      actors() %>% select(-c(id,server)) %>% 
+        filter(subType %in% c("Mage","DeathKnight",
+                              "Druid","Hunter","Paladin",
+                              "Priest","Rogue","Shaman","Warlock","Warrior")) %>%
+                 arrange(gameID)
+      })
+    
+    
     
   })
   
@@ -1922,7 +1941,7 @@ observeEvent(input$submit_char_id, {
             "<br/",
             paste0("<i><sup>1</sup> If a target dies before the 'stored' Ignite Damage has time to tick, any damage 'stored' in the Ignite is lost. This is NOT munching.</i>"), 
             paste0("<i><sup>2</sup> # of Living Bombs refreshed BEFORE they had time to explode.</i>"), 
-            paste0("<i><sup>4</sup> Unsure of what this means? Ask in Mage Discord (Link to your left) - Sometimes your WA might fail due to logging error, and not really because of the WA. One out of 10-20 casts is likely a false positive.</i>"), 
+            paste0("<i><sup>4</sup> You are either lagging or using an outdated WA for munching, which you should uninstall. Unsure of what this means? Ask in Mage Discord (Link to your left).</i>"), 
             paste0("<i><sup>5</sup> Hot Streaks not fully used. Not fully consumed before it got 'refreshed'. i.e. You got hot streak while you had hot streak.</i>"), 
             paste0("<i><sup>*</sup> Before partial resists.</i>"), 
             sep = '<br/>'))

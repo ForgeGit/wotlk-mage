@@ -205,6 +205,14 @@ ui <- fluidPage(
                            fluidRow(
                              column(width = 9, withSpinner(plotOutput("plot_DP"),color="red"))
                            )
+                  ),
+                  tabPanel("Raid GUID",
+                           fluidRow(
+                             column(width = 9, uiOutput("GUID_Info"))
+                           ),
+                           fluidRow(
+                             column(width = 9, withSpinner(dataTableOutput("table_GUID"),color="red"))
+                           )
                   )
       )
     )

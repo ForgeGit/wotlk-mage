@@ -690,7 +690,42 @@ server <- function(input, output,session) {
   
 })
 
+  ########## Raid GUID TEXT ##################33
   
+  output$GUID_Info<- renderUI({
+    
+    str_GUID_1 <- paste0("GUID (globally unique identifier) is an unique ID that all characters in World of Warcraft have.")
+    str_GUID_2 <- paste0("This ID is defined the moment you create or transfer a character, and is specific to the server of that character.")
+    str_GUID_3 <- paste0("The older your character is, the lower its GUID will be.")
+    
+    str_GUID_4 <- paste0("The only way (we know?) to get a higher GUID (effectively refreshing your GUID) on old characters is to transfer.")
+    str_GUID_5 <- paste0("  - During the transfer process your character 'ceases to exist' temporarily and is recreated on the server of destination.")
+    
+    str_GUID_6 <- paste0("Currently the main purpose of this tool is to provide information about who should be optimally 'cheesing' Sindragosa in ICC")
+    str_GUID_7 <- paste0("  - You can read more about it here: <a href='https://github.com/ForgeGit/Sindragosa_GUID'>https://github.com/ForgeGit/Sindragosa_GUID.</a>")
+    
+    str_GUID_8 <- paste0("<b>The following table goes from the lowest GUID to the highest GUID in the log.</b>")
+    
+    ## Final format
+    
+    HTML(paste(paste0("<h3>Raid GUID exporter</h3>"),
+               
+               str_GUID_1,
+               str_GUID_2,
+               str_GUID_3,
+               "<br/",
+               str_GUID_4,
+               str_GUID_5,
+               "<br/",
+               str_GUID_6,
+               str_GUID_7,
+               "<br/",
+               paste0("<h4><b>GUID Table:</b></h4>"),
+               str_GUID_8,
+               sep = '<br/>'))
+    
+    
+  })
   #### LEADERBOARD (LOAD) ####
   
   # gs4_deauth()
@@ -996,8 +1031,20 @@ server <- function(input, output,session) {
         filter(subType %in% c("Mage","DeathKnight",
                               "Druid","Hunter","Paladin",
                               "Priest","Rogue","Shaman","Warlock","Warrior")) %>%
-                 arrange(gameID)
-      })
+        arrange(gameID) #%>% 
+        # DT::datatable(extensions = 'Buttons',
+        #               
+        #               options = list(
+        #                 paging = TRUE,
+        #                 searching = TRUE,
+        #                 # fixedColumns = TRUE,
+        #                 autoWidth = TRUE,
+        #                 ordering = TRUE,
+        #                 # dom = 'tB',
+        #                 buttons = c('copy', 'csv', 'excel'),
+        #                 columnDefs = list(list(width = '200px', targets = "_all"))
+        #               ))
+    })
     
     
     

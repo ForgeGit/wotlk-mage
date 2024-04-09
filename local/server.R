@@ -949,6 +949,18 @@ server <- function(input, output,session) {
   
     
     
+    skugg_pressence <-eventReactive(input$submit_log_id, { #IS DR BOOM PRESENT?
+      
+      if(any(actors()$gameID %in% c(81606984,
+                                  72571601,
+                                  86832514)) ==T){
+        "TRUE"
+      } else{
+        "FALSE"
+      }
+      
+    })
+
     
   ### STEP 1.5: Submit log ID (display) ####
   
@@ -1020,19 +1032,36 @@ server <- function(input, output,session) {
       ###### Modal Error 2 ######
       showModal(error_diag(error2,2))
       updateSelectInput(session, "fight", choices = fights())
-      }
-   
+    }
+    
     
     ## GUID table generation
     
+    
+    
     output$table_GUID <- renderDataTable({ 
       
-      actors() %>% select(-c(id,server)) %>% 
-        filter(subType %in% c("Mage","DeathKnight",
-                              "Druid","Hunter","Paladin",
-                              "Priest","Rogue","Shaman","Warlock","Warrior")) %>%
-        arrange(gameID) #%>% 
-        # DT::datatable(extensions = 'Buttons',
+      if(as.character(skugg_pressence()) == "TRUE"){
+        
+        actors() %>% select(-c(id,server)) %>% 
+          filter(subType %in% c("Mage","DeathKnight",
+                                "Druid","Hunter","Paladin",
+                                "Priest","Rogue","Shaman","Warlock","Warrior")) %>%
+          mutate(gameID =  runif(n=1, min=1, max=20) )  %>%
+          arrange(gameID)
+        
+        
+        
+      } else {
+        actors() %>% select(-c(id,server)) %>% 
+          filter(subType %in% c("Mage","DeathKnight",
+                                "Druid","Hunter","Paladin",
+                                "Priest","Rogue","Shaman","Warlock","Warrior")) %>%
+          arrange(gameID)
+        
+      }
+      #%>% 
+      # DT::datatable(extensions = 'Buttons',
         #               
         #               options = list(
         #                 paging = TRUE,
